@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::Subcommand;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker, utils};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker, utils};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -171,10 +171,13 @@ fn extract_code_block(response: &str) -> String {
 // ── LLM helpers ───────────────────────────────────────────────────────────────
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("mock");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
-    let client   = llm::client_for(&provider, &api_key);
-    client.complete(system, user).await
+    let result   = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user).await?;
+    memory::record_interaction("mock", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

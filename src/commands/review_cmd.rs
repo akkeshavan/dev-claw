@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker};
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -165,10 +165,13 @@ fn validate_focus(focus: &str) -> Result<()> {
 // ── LLM helpers ───────────────────────────────────────────────────────────────
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("review");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
-    let client   = llm::client_for(&provider, &api_key);
-    client.complete(system, user).await
+    let result   = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user).await?;
+    memory::record_interaction("review", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

@@ -3,7 +3,7 @@ use std::io::{self, IsTerminal, Read};
 
 use crate::{
     config::{Config, DoctorConfig, UsageLimits},
-    creds, llm,
+    creds, llm, memory,
     usage::UsageTracker,
 };
 
@@ -77,11 +77,13 @@ fn enforce_quota(cfg: Option<&UsageLimits>) -> Result<Option<String>> {
 }
 
 async fn call_llm(cleaned: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("doctor");
+    let system   = format!("{ctx}{SYSTEM_PROMPT}");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
-    llm::client_for(&provider, &api_key)
-        .complete(SYSTEM_PROMPT, cleaned)
-        .await
+    let result   = llm::client_for(&provider, &api_key).complete(&system, cleaned).await?;
+    memory::record_interaction("doctor", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

@@ -5,6 +5,7 @@ mod commands;
 mod config;
 mod creds;
 mod llm;
+mod memory;
 mod usage;
 mod utils;
 
@@ -81,6 +82,11 @@ enum Command {
     },
     /// Show free-tier quota usage for this month
     Usage,
+    /// View, add, and clear per-project LLM memory
+    Memory {
+        #[command(subcommand)]
+        action: commands::memory_cmd::MemoryAction,
+    },
     /// Configure API provider keys and settings
     Config {
         #[command(subcommand)]
@@ -118,6 +124,7 @@ async fn main() -> Result<()> {
         Command::Env { action }     => commands::env_cmd::run(action).await,
         Command::Workflow { action } => commands::workflow_cmd::run(action).await,
         Command::Usage => commands::usage_cmd::run().await,
+        Command::Memory { action } => { commands::memory_cmd::run(action)?; Ok(()) }
         Command::Config { action } => match action {
             ConfigAction::SetKey { provider } => commands::config_cmd::set_key(&provider).await,
             ConfigAction::ListKeys            => commands::config_cmd::list_keys().await,

@@ -1,5 +1,6 @@
 pub mod cloud_cmd;
 pub mod config_cmd;
+pub mod memory_cmd;
 pub mod deps_cmd;
 pub mod doctor;
 pub mod env_cmd;

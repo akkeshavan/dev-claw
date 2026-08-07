@@ -3,7 +3,7 @@ use clap::Subcommand;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -332,9 +332,13 @@ fn enforce_quota(cfg: &Config) -> Result<Option<String>> {
 }
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("git");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
-    llm::client_for(&provider, &api_key).complete(system, user).await
+    let result   = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user).await?;
+    memory::record_interaction("git", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

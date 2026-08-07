@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker, utils};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker, utils};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -176,19 +176,20 @@ fn create_tag(version: &str, notes: &str) -> Result<()> {
 // ── LLM draft ─────────────────────────────────────────────────────────────────
 
 async fn draft_notes(commits: &[String], base: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("release");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
-    let system = "You are a technical writer drafting release notes for a software project. \
+    let base_system = "You are a technical writer drafting release notes for a software project. \
         Given a list of commit messages (Conventional Commits format), produce polished, \
         user-facing release notes grouped by category (Features, Bug Fixes, Improvements, \
         Breaking Changes). Write for end-users, not developers. Be concise and clear. \
         Omit chore/ci/docs commits unless significant.";
-    let commit_list = commits.join("\n");
-    let prompt = format!(
-        "Commits since {base}:\n{commit_list}\n\nWrite release notes."
-    );
-    client.complete(system, &prompt).await
+    let system  = format!("{ctx}{base_system}");
+    let prompt  = format!("Commits since {base}:\n{}\n\nWrite release notes.", commits.join("\n"));
+    let result  = client.complete(&system, &prompt).await?;
+    memory::record_interaction("release", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

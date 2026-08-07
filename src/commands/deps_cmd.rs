@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{creds, llm};
+use crate::{creds, llm, memory};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -137,18 +137,20 @@ pub fn run_tool(cmd: &str, args: &[&str]) -> String {
 // ── LLM triage ────────────────────────────────────────────────────────────────
 
 async fn llm_triage(audit_output: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("deps");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
-    let system = "You are a security engineer triaging dependency vulnerabilities. \
+    let base_system = "You are a security engineer triaging dependency vulnerabilities. \
         For each vulnerability found, assess: severity (Critical/High/Medium/Low), \
         whether it is exploitable in a typical web/CLI context, and whether an upgrade is available. \
         Conclude with a ranked action list: what to fix now vs. later vs. ignore. \
         Be concise and specific.";
-    let prompt = format!(
-        "Audit output from package managers:\n\n{audit_output}\n\nTriage these findings."
-    );
-    client.complete(system, &prompt).await
+    let system = format!("{ctx}{base_system}");
+    let prompt = format!("Audit output from package managers:\n\n{audit_output}\n\nTriage these findings.");
+    let result = client.complete(&system, &prompt).await?;
+    memory::record_interaction("deps", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {

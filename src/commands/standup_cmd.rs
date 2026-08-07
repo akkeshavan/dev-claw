@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::process::Command;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker};
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
@@ -72,12 +72,14 @@ pub fn active_branches() -> Vec<String> {
 // ── LLM draft ─────────────────────────────────────────────────────────────────
 
 async fn draft_standup(commits: &[String], branches: &[String], format: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("standup");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
-    let system   = build_system_prompt(format);
-    let prompt   = build_prompt(commits, branches);
-    client.complete(&system, &prompt).await
+    let system   = format!("{ctx}{}", build_system_prompt(format));
+    let result   = client.complete(&system, &build_prompt(commits, branches)).await?;
+    memory::record_interaction("standup", &result);
+    Ok(result)
 }
 
 pub fn build_system_prompt(format: &str) -> String {

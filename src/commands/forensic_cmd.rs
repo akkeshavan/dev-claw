@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Subcommand;
 use std::collections::HashSet;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, memory, usage::UsageTracker};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -176,13 +176,17 @@ fn truncate_llm(s: &str, max_chars: usize) -> String {
 }
 
 async fn call_llm(prompt: &str) -> Result<String> {
+    let ctx      = memory::context_for_prompt("forensic");
     let provider = resolve_provider()?;
     let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
-    let system   = "You are a code historian. Given source lines and git blame metadata, \
+    let base_system = "You are a code historian. Given source lines and git blame metadata, \
                     explain WHY this code exists — what problem it solved, what bug it fixed, \
                     or what feature it implements. Be concise and specific.";
-    client.complete(system, prompt).await
+    let system   = format!("{ctx}{base_system}");
+    let result   = client.complete(&system, prompt).await?;
+    memory::record_interaction("forensic", &result);
+    Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {
