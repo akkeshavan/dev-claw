@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{config::Config, keychain, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, usage::UsageTracker};
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -166,7 +166,7 @@ fn validate_focus(focus: &str) -> Result<()> {
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
     let provider = resolve_provider()?;
-    let api_key  = keychain::load(&provider)?;
+    let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
     client.complete(system, user).await
 }
@@ -175,7 +175,7 @@ fn resolve_provider() -> Result<String> {
     if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
         return Ok(p);
     }
-    keychain::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
+    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
         "No API provider configured. Run: dev-claw config set-key --provider deepseek"
     ))
 }

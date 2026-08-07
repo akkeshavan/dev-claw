@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{keychain, llm};
+use crate::{creds, llm};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ pub fn run_tool(cmd: &str, args: &[&str]) -> String {
 
 async fn llm_triage(audit_output: &str) -> Result<String> {
     let provider = resolve_provider()?;
-    let api_key  = keychain::load(&provider)?;
+    let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
     let system = "You are a security engineer triaging dependency vulnerabilities. \
         For each vulnerability found, assess: severity (Critical/High/Medium/Low), \
@@ -153,7 +153,7 @@ async fn llm_triage(audit_output: &str) -> Result<String> {
 
 fn resolve_provider() -> Result<String> {
     if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    keychain::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
+    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
         "No API provider configured. Run: dev-claw config set-key --provider deepseek"
     ))
 }

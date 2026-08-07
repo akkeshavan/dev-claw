@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 
 mod commands;
 mod config;
-mod keychain;
+mod creds;
 mod llm;
 mod usage;
 
@@ -89,12 +89,14 @@ enum Command {
 
 #[derive(Subcommand)]
 enum ConfigAction {
-    /// Store an API key securely in the OS keychain
+    /// Store an API key in the encrypted credentials store
     SetKey {
-        /// Provider name: deepseek | openai | claude | ollama
+        /// Provider: deepseek | openai | claude | sarvam | mistral
         #[arg(long)]
         provider: String,
     },
+    /// List all providers that have credentials stored
+    ListKeys,
 }
 
 #[tokio::main]
@@ -116,9 +118,8 @@ async fn main() -> Result<()> {
         Command::Workflow { action } => commands::workflow_cmd::run(action).await,
         Command::Usage => commands::usage_cmd::run().await,
         Command::Config { action } => match action {
-            ConfigAction::SetKey { provider } => {
-                commands::config_cmd::set_key(&provider).await
-            }
+            ConfigAction::SetKey { provider } => commands::config_cmd::set_key(&provider).await,
+            ConfigAction::ListKeys            => commands::config_cmd::list_keys().await,
         },
     }
 }

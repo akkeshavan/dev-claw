@@ -3,7 +3,7 @@ use chrono::Local;
 use clap::Subcommand;
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::{config::Config, keychain};
+use crate::{config::Config, creds};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -300,7 +300,7 @@ fn check_vm_limit(db: &CloudDb, cfg: &Config) -> Result<()> {
 
 fn load_cloud_token(provider: &Provider) -> Result<String> {
     let name = provider.keychain_name();
-    keychain::load(name).map_err(|_| anyhow::anyhow!(
+    creds::load(name).map_err(|_| anyhow::anyhow!(
         "No {name} token. Run: dev-claw config set-key --provider {name}"
     ))
 }

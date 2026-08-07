@@ -3,7 +3,7 @@ use clap::Subcommand;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::{config::Config, keychain, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, usage::UsageTracker};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -333,14 +333,14 @@ fn enforce_quota(cfg: &Config) -> Result<Option<String>> {
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
     let provider = resolve_provider()?;
-    let api_key  = keychain::load(&provider)?;
+    let api_key  = creds::load(&provider)?;
     llm::client_for(&provider, &api_key).complete(system, user).await
 }
 
 fn resolve_provider() -> Result<String> {
     std::env::var("DEV_CLAW_PROVIDER")
         .ok()
-        .or_else(keychain::auto_detect_provider)
+        .or_else(creds::auto_detect_provider)
         .ok_or_else(|| {
             anyhow::anyhow!(
                 "No API key configured.\nRun: dev-claw config set-key --provider deepseek"

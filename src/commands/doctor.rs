@@ -3,7 +3,7 @@ use std::io::{self, IsTerminal, Read};
 
 use crate::{
     config::{Config, DoctorConfig, UsageLimits},
-    keychain, llm,
+    creds, llm,
     usage::UsageTracker,
 };
 
@@ -78,7 +78,7 @@ fn enforce_quota(cfg: Option<&UsageLimits>) -> Result<Option<String>> {
 
 async fn call_llm(cleaned: &str) -> Result<String> {
     let provider = resolve_provider()?;
-    let api_key  = keychain::load(&provider)?;
+    let api_key  = creds::load(&provider)?;
     llm::client_for(&provider, &api_key)
         .complete(SYSTEM_PROMPT, cleaned)
         .await
@@ -87,7 +87,7 @@ async fn call_llm(cleaned: &str) -> Result<String> {
 fn resolve_provider() -> Result<String> {
     std::env::var("DEV_CLAW_PROVIDER")
         .ok()
-        .or_else(keychain::auto_detect_provider)
+        .or_else(creds::auto_detect_provider)
         .ok_or_else(|| {
             anyhow::anyhow!(
                 "No API key configured.\n\

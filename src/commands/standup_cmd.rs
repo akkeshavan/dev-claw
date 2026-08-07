@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::process::Command;
 
-use crate::{config::Config, keychain, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, usage::UsageTracker};
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
@@ -73,7 +73,7 @@ pub fn active_branches() -> Vec<String> {
 
 async fn draft_standup(commits: &[String], branches: &[String], format: &str) -> Result<String> {
     let provider = resolve_provider()?;
-    let api_key  = keychain::load(&provider)?;
+    let api_key  = creds::load(&provider)?;
     let client   = llm::client_for(&provider, &api_key);
     let system   = build_system_prompt(format);
     let prompt   = build_prompt(commits, branches);
@@ -138,7 +138,7 @@ fn enforce_quota(cfg: &Config) -> Result<()> {
 
 fn resolve_provider() -> Result<String> {
     if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    keychain::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
+    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
         "No API provider configured. Run: dev-claw config set-key --provider deepseek"
     ))
 }
