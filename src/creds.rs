@@ -33,8 +33,23 @@ pub fn store(provider: &str, api_key: &str) -> Result<()> {
     let is_new = !salt_path()?.exists();
     let key    = get_or_derive_key(is_new)?;
     let ciphertext = encrypt(&key, api_key)?;
-    std::fs::write(cred_path(provider)?, &ciphertext)
-        .map_err(|e| anyhow::anyhow!("Cannot write credential file: {e}"))
+    let path = cred_path(provider)?;
+    std::fs::write(&path, &ciphertext)
+        .map_err(|e| anyhow::anyhow!("Cannot write credential file: {e}"))?;
+    restrict_file_permissions(&path)
+}
+
+#[cfg(unix)]
+fn restrict_file_permissions(path: &std::path::Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let perms = std::fs::Permissions::from_mode(0o600);
+    std::fs::set_permissions(path, perms)
+        .map_err(|e| anyhow::anyhow!("Cannot secure credential file: {e}"))
+}
+
+#[cfg(not(unix))]
+fn restrict_file_permissions(_path: &std::path::Path) -> Result<()> {
+    Ok(())
 }
 
 /// Read and decrypt the stored key for `provider`.
@@ -94,10 +109,28 @@ pub fn creds_dir() -> Result<PathBuf> {
             .join("creds")
     };
     std::fs::create_dir_all(&base)?;
+    restrict_dir_permissions(&base)?;
     Ok(base)
 }
 
+#[cfg(unix)]
+fn restrict_dir_permissions(path: &std::path::Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let perms = std::fs::Permissions::from_mode(0o700);
+    std::fs::set_permissions(path, perms)
+        .map_err(|e| anyhow::anyhow!("Cannot secure creds directory: {e}"))
+}
+
+#[cfg(not(unix))]
+fn restrict_dir_permissions(_path: &std::path::Path) -> Result<()> {
+    Ok(())
+}
+
 fn cred_path(provider: &str) -> Result<PathBuf> {
+    // Reject anything that could escape the creds directory.
+    if provider.contains('/') || provider.contains('\\') || provider.contains("..") {
+        anyhow::bail!("Invalid provider name: '{provider}'");
+    }
     Ok(creds_dir()?.join(format!("{provider}.enc")))
 }
 
@@ -109,15 +142,22 @@ fn salt_path() -> Result<PathBuf> {
 
 fn load_or_create_salt() -> Result<Vec<u8>> {
     let path = salt_path()?;
-    if path.exists() {
-        return std::fs::read(&path)
-            .map_err(|e| anyhow::anyhow!("Cannot read salt file: {e}"));
-    }
+    // Try atomic create-new first. If the file already exists, read it.
     let mut salt = vec![0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut salt);
-    std::fs::write(&path, &salt)
-        .map_err(|e| anyhow::anyhow!("Cannot write salt file: {e}"))?;
-    Ok(salt)
+    match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+        Ok(mut f) => {
+            use std::io::Write;
+            f.write_all(&salt)
+                .map_err(|e| anyhow::anyhow!("Cannot write salt file: {e}"))?;
+            Ok(salt)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            std::fs::read(&path)
+                .map_err(|e| anyhow::anyhow!("Cannot read salt file: {e}"))
+        }
+        Err(e) => Err(anyhow::anyhow!("Cannot create salt file: {e}")),
+    }
 }
 
 // ── Key derivation ────────────────────────────────────────────────────────────
@@ -147,7 +187,7 @@ fn get_passphrase(is_new_vault: bool) -> Result<String> {
 }
 
 fn get_or_derive_key(is_new_vault: bool) -> Result<[u8; 32]> {
-    let mut guard = KEY_CACHE.lock().unwrap();
+    let mut guard = KEY_CACHE.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(key) = *guard { return Ok(key); }
     let salt       = load_or_create_salt()?;
     let passphrase = get_passphrase(is_new_vault)?;

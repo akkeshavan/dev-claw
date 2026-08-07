@@ -247,6 +247,9 @@ fn fetch_via_gh_gist(gist_id: &str) -> Result<String> {
 }
 
 fn fetch_url(url: &str) -> Result<String> {
+    if !url.starts_with("https://") && !url.starts_with("http://") {
+        bail!("Only http:// and https:// URLs are supported for workflow import (got: {url})");
+    }
     let out = Command::new("curl")
         .args(["-fsSL", url])
         .output()

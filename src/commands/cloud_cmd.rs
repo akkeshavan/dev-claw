@@ -110,8 +110,8 @@ impl Provider {
 
     pub fn keychain_name(&self) -> &'static str {
         match self {
-            Self::DigitalOcean => "digitalocean",
-            Self::Hetzner      => "hetzner",
+            Self::DigitalOcean => "do-token",
+            Self::Hetzner      => "hetzner-token",
             Self::Aws          => "aws",
             Self::Azure        => "azure",
             Self::Gcp          => "gcp",
@@ -299,9 +299,9 @@ fn check_vm_limit(db: &CloudDb, cfg: &Config) -> Result<()> {
 }
 
 fn load_cloud_token(provider: &Provider) -> Result<String> {
-    let name = provider.keychain_name();
-    creds::load(name).map_err(|_| anyhow::anyhow!(
-        "No {name} token. Run: dev-claw config set-key --provider {name}"
+    let key_name = provider.keychain_name();
+    creds::load(key_name).map_err(|_| anyhow::anyhow!(
+        "No API token for this provider. Run: dev-claw config set-key --provider {key_name}"
     ))
 }
 

@@ -349,13 +349,11 @@ fn resolve_provider() -> Result<String> {
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
-    if s.len() <= max_chars {
+    if s.chars().count() <= max_chars {
         return s.to_string();
     }
-    format!(
-        "{}\n\n[... diff truncated at {max_chars} chars ...]",
-        &s[..max_chars]
-    )
+    let trimmed: String = s.chars().take(max_chars).collect();
+    format!("{trimmed}\n\n[... diff truncated at {max_chars} chars ...]")
 }
 
 fn print_violations(violations: &[Violation]) {

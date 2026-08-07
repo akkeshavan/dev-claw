@@ -5,7 +5,7 @@ Stop context-switching to do the non-coding parts of coding.
 
 dev-claw automates the chores that surround writing software — commit messages, code review, dependency audits, standup updates, release notes, cloud VMs, and more — using whatever AI provider you already have a key for.
 
-- **BYOK** — bring your own API key (DeepSeek, OpenAI, Claude, Ollama). Keys are stored in your OS keychain, never in config files.
+- **BYOK** — bring your own API key (DeepSeek, OpenAI, Claude, Sarvam, Mistral, Ollama). Keys are stored in `~/dev-claw/creds/` as AES-256-GCM encrypted files, never in plain config files.
 - **Local-first** — no account, no telemetry, no backend. Usage quota tracked in a local SQLite database.
 - **Composable** — chain commands into shareable workflows.
 
