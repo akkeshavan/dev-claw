@@ -3,7 +3,7 @@ use chrono::Local;
 use clap::Subcommand;
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::{config::Config, creds};
+use crate::{config::Config, creds, utils};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -344,6 +344,13 @@ async fn down(vm: &str) -> Result<()> {
     let record = db.find(vm)?.ok_or_else(|| anyhow::anyhow!(
         "VM `{vm}` not found. Run `dev-claw cloud ls`"
     ))?;
+    if !utils::confirm(&format!(
+        "Permanently destroy VM `{}` ({})? This cannot be undone. [y/N] ",
+        record.name, record.provider
+    ))? {
+        println!("Aborted.");
+        return Ok(());
+    }
     let provider = Provider::from_str(&record.provider)?;
     let token = if provider.requires_token() { load_cloud_token(&provider)? } else { String::new() };
     println!("Destroying {} `{}`...", record.provider, record.name);

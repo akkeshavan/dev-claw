@@ -6,6 +6,7 @@ mod config;
 mod creds;
 mod llm;
 mod usage;
+mod utils;
 
 #[derive(Parser)]
 #[command(

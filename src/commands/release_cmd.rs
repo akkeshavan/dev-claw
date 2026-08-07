@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Subcommand;
 use std::process::Command;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, usage::UsageTracker, utils};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -69,6 +69,10 @@ async fn cut(version_override: Option<&str>, dry_run: bool) -> Result<()> {
     println!("{notes}\n");
     if dry_run {
         println!("-- dry-run: would update CHANGELOG.md and create tag v{version}");
+        return Ok(());
+    }
+    if !utils::confirm(&format!("Write to CHANGELOG.md and create tag v{version}? [y/N] "))? {
+        println!("Aborted.");
         return Ok(());
     }
     prepend_changelog(&version, &notes)?;

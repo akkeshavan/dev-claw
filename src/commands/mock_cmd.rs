@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::Subcommand;
 
-use crate::{config::Config, creds, llm, usage::UsageTracker};
+use crate::{config::Config, creds, llm, usage::UsageTracker, utils};
 
 // ── Subcommand enum ───────────────────────────────────────────────────────────
 
@@ -88,13 +88,18 @@ fn read_schema(path: &str) -> Result<String> {
 }
 
 fn write_output(content: &str, out: Option<&str>) -> Result<()> {
-    if let Some(path) = out {
-        std::fs::write(path, content)
-            .map_err(|e| anyhow::anyhow!("Cannot write {path}: {e}"))?;
-        println!("Written to {path}");
+    let Some(path) = out else {
+        println!("{content}");
+        return Ok(());
+    };
+    let abs = utils::safe_output_path(path)?;
+    if abs.exists() && !utils::confirm(&format!("File `{path}` already exists — overwrite? [y/N] "))? {
+        println!("Aborted.");
         return Ok(());
     }
-    println!("{content}");
+    std::fs::write(&abs, content)
+        .map_err(|e| anyhow::anyhow!("Cannot write {path}: {e}"))?;
+    println!("Written to {path}");
     Ok(())
 }
 
