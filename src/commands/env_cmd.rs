@@ -140,6 +140,9 @@ fn staged_diff() -> Result<String> {
     let out = std::process::Command::new("git")
         .args(["diff", "--cached"])
         .output()?;
+    if !out.status.success() {
+        anyhow::bail!("git diff failed: {}", String::from_utf8_lossy(&out.stderr).trim());
+    }
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 

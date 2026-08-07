@@ -152,7 +152,8 @@ fn import_workflow(url: &str) -> Result<()> {
 pub fn execute_step(step: &str) -> Result<bool> {
     let exe  = std::env::current_exe()
         .map_err(|e| anyhow::anyhow!("Cannot locate dev-claw binary: {e}"))?;
-    let args: Vec<&str> = step.split_whitespace().collect();
+    let args = shlex::split(step)
+        .ok_or_else(|| anyhow::anyhow!("Invalid step syntax (unmatched quote?): {step}"))?;
     let status = Command::new(&exe)
         .args(&args)
         .status()

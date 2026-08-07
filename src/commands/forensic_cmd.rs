@@ -85,7 +85,7 @@ fn run_git_blame(file: &str, range: Option<(u32, u32)>) -> Result<String> {
     if let Some((start, end)) = range {
         cmd.args(["-L", &format!("{start},{end}")]);
     }
-    cmd.arg(file);
+    cmd.args(["--", file]);
     let out = cmd.output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
