@@ -28,7 +28,7 @@ Pre-built binaries for macOS, Linux, and Windows coming soon.
 ## Quick start
 
 ```sh
-# 1. Store an API key (stored in OS keychain)
+# 1. Store an API key (encrypted in ~/dev-claw/creds/ — prompts for a master passphrase on first use)
 dev-claw config set-key --provider deepseek
 
 # 2. Detect your stack and generate a .devclawrc
@@ -231,7 +231,7 @@ dev-claw cloud ssh claw-a3f7c2
 dev-claw cloud down claw-a3f7c2
 ```
 
-DigitalOcean and Hetzner use API tokens stored in the keychain. AWS, Azure, and GCP delegate to their CLIs (`aws`, `az`, `gcloud`) — any existing auth method (SSO, IAM roles, service accounts) works automatically.
+DigitalOcean and Hetzner use API tokens stored in the encrypted credential vault (`do-token` and `hetzner-token`). AWS, Azure, and GCP delegate to their CLIs (`aws`, `az`, `gcloud`) — any existing auth method (SSO, IAM roles, service accounts) works automatically.
 
 ---
 
@@ -314,20 +314,76 @@ dev-claw searches upward from the current directory for `.devclawrc`, so a repo-
 
 ## API providers
 
-Configure a provider once; dev-claw stores the key in your OS keychain (macOS Keychain, Linux Secret Service, Windows Credential Manager).
+### Supported providers
 
-```sh
-dev-claw config set-key --provider deepseek    # cheapest, recommended default
-dev-claw config set-key --provider openai
-dev-claw config set-key --provider claude
-dev-claw config set-key --provider ollama      # local, fully offline
+| Provider | Notes |
+|---|---|
+| `deepseek` | Cheapest per-token, recommended default |
+| `openai` | GPT-4o-mini |
+| `claude` | Claude Haiku (Anthropic) |
+| `sarvam` | Indian-language specialist (Sarvam AI) |
+| `mistral` | mistral-small-latest |
+| `ollama` | Local inference, fully offline, no key needed |
+
+### Credential store
+
+Keys are stored in **`~/dev-claw/creds/`** as AES-256-GCM encrypted files — one file per provider. No OS keychain is used; encryption relies entirely on a master passphrase you set on first use.
+
+**Key derivation**: Argon2id (64 MB memory, 3 iterations) — deliberately slow to resist brute-force if the files are ever exfiltrated.
+
+**File layout:**
+```
+~/dev-claw/creds/
+  .salt           # 32-byte random salt, written once
+  deepseek.enc    # 12-byte nonce + AES-256-GCM ciphertext
+  openai.enc
+  claude.enc
+  sarvam.enc
+  mistral.enc
 ```
 
-To override the provider for a single command:
+### Setup
+
+```sh
+# First call creates the vault and prompts to set a master passphrase
+dev-claw config set-key --provider deepseek
+
+# Add more providers — prompts for master passphrase once per session
+dev-claw config set-key --provider mistral
+dev-claw config set-key --provider sarvam
+
+# See what's stored
+dev-claw config list-keys
+```
+
+On first run, you are prompted to create and confirm a master passphrase. Subsequent commands prompt for it once per process invocation — the derived key is cached in memory for the session.
+
+### CI / scripting
+
+Set `DEV_CLAW_MASTER` to skip the interactive prompt:
+
+```sh
+export DEV_CLAW_MASTER="my passphrase"
+dev-claw standup --format slack
+```
+
+### Per-command provider override
 
 ```sh
 DEV_CLAW_PROVIDER=claude dev-claw review diff --focus security
+DEV_CLAW_PROVIDER=mistral dev-claw git commit
 ```
+
+### Cloud provider tokens
+
+DigitalOcean and Hetzner API tokens are stored in the same encrypted vault:
+
+```sh
+dev-claw config set-key --provider do-token
+dev-claw config set-key --provider hetzner-token
+```
+
+AWS, Azure, and GCP delegate to their CLIs (`aws`, `az`, `gcloud`) — any existing auth (SSO, IAM roles, service accounts) works automatically.
 
 ---
 
