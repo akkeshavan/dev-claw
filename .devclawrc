@@ -1,0 +1,26 @@
+[stack]
+name            = "rust"
+package_manager = "cargo"
+
+[standards]
+coding_style = """
+- Use Result<T, E> and ? for error propagation; avoid unwrap() outside tests.
+- Prefer owned types in struct fields; use references in function signatures.
+- Write unit tests in #[cfg(test)] mod tests at the bottom of each file.
+- Keep functions under 40 lines; max 2 levels of nesting.
+- Prefer iterators and combinators over explicit loops where readable.
+"""
+
+[git]
+commit_style      = "conventional"
+block_on_keywords = ["console.log", "debugger", "FIXME", "TODO"]
+
+[doctor]
+auto_ignore_patterns = ["target/"]
+max_log_lines        = 100
+
+[usage]
+monthly_limit   = 200
+doctor_limit    = 75
+warn_at_percent = 80
+reset_day       = 1

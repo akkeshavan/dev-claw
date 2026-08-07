@@ -1,0 +1,29 @@
+[package]
+name = "dev-claw"
+version = "0.1.0"
+edition = "2021"
+description = "AI-powered developer daemon for SDLC automation"
+license = "MIT"
+
+[[bin]]
+name = "dev-claw"
+path = "src/main.rs"
+
+[dependencies]
+clap         = { version = "4",    features = ["derive", "color"] }
+tokio        = { version = "1",    features = ["full"] }
+reqwest      = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+serde        = { version = "1",    features = ["derive"] }
+serde_json   = "1"
+toml         = "0.8"
+keyring      = "3"
+rusqlite     = { version = "0.31", features = ["bundled"] }
+anyhow       = "1"
+async-trait  = "0.1"
+strip-ansi-escapes = "0.2"
+dirs         = "5"
+chrono       = "0.4"
+rpassword    = "7"
+
+[dev-dependencies]
+tempfile = "3"
