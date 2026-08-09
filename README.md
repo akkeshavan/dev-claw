@@ -318,7 +318,7 @@ dev-claw searches upward from the current directory for `.devclawrc`.
 
 ## API Providers
 
-dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GCM + Argon2id and saved to `~/.dev-claw/credentials.enc`. You set a master passphrase on first use; subsequent commands prompt for it once per session.
+dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GCM + Argon2id and saved to `~/dev-claw/creds/` — one file per provider (e.g. `deepseek.enc`, `openai.enc`). On macOS/Linux the directory is locked to `700` and each file to `600` so only your user can read them. You set a master passphrase on first use; subsequent commands prompt for it once per session.
 
 ### Supported providers
 
