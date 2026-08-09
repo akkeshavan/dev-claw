@@ -318,6 +318,10 @@ dev-claw searches upward from the current directory for `.devclawrc`.
 
 ## API Providers
 
+dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GCM + Argon2id and saved to `~/.dev-claw/credentials.enc`. You set a master passphrase on first use; subsequent commands prompt for it once per session.
+
+### Supported providers
+
 | Provider | Key name | Best for |
 |---|---|---|
 | OpenAI | `openai` | Best overall quality |
@@ -329,18 +333,72 @@ dev-claw searches upward from the current directory for `.devclawrc`.
 | OpenRouter | `openrouter` | Unified access to 200+ models |
 | Custom | `openai-compat` | Self-hosted LLMs, vLLM, LM Studio |
 
-Keys are stored in `~/.dev-claw/credentials.enc` encrypted with AES-256-GCM + Argon2id — never in plain text, never sent anywhere except your chosen provider.
+### Per-provider setup
 
-**Per-command override:**
+**OpenAI**
+1. Get your key at https://platform.openai.com/api-keys
+2. `dev-claw config set-key --provider openai`
+
+**Anthropic**
+1. Get your key at https://console.anthropic.com/settings/keys
+2. `dev-claw config set-key --provider anthropic`
+
+**DeepSeek** *(recommended — best cost/quality)*
+1. Get your key at https://platform.deepseek.com/api_keys
+2. `dev-claw config set-key --provider deepseek`
+
+**Groq** *(fastest)*
+1. Get your key at https://console.groq.com/keys
+2. `dev-claw config set-key --provider groq`
+
+**Mistral**
+1. Get your key at https://console.mistral.ai/api-keys
+2. `dev-claw config set-key --provider mistral`
+
+**OpenRouter** *(access 200+ models with one key)*
+1. Get your key at https://openrouter.ai/keys
+2. `dev-claw config set-key --provider openrouter`
+
+**Ollama** *(local, no API key required)*
+1. Install Ollama from https://ollama.com
+2. Pull a model: `ollama pull llama3.2`
+3. Set the provider — no key needed:
+   ```sh
+   DEV_CLAW_PROVIDER=ollama dev-claw doctor
+   ```
+   Or set it as the default in `.devclawrc`:
+   ```toml
+   [stack]
+   provider = "ollama"
+   ```
+
+**Custom / OpenAI-compatible endpoint** *(vLLM, LM Studio, etc.)*
+```sh
+DEV_CLAW_PROVIDER=openai-compat \
+DEV_CLAW_BASE_URL=http://localhost:8000/v1 \
+dev-claw git commit
+```
+
+### Verify your setup
+
+```sh
+dev-claw config list-keys    # show which providers are configured
+dev-claw usage               # confirm a call went through this month
+```
+
+### Switch provider per command
 
 ```sh
 DEV_CLAW_PROVIDER=anthropic dev-claw review diff --focus security
+DEV_CLAW_PROVIDER=groq dev-claw git commit
 ```
 
-**CI / scripting (skip interactive passphrase prompt):**
+### CI / scripting
+
+Set `DEV_CLAW_MASTER` to skip the interactive passphrase prompt:
 
 ```sh
-export DEV_CLAW_MASTER="my passphrase"
+export DEV_CLAW_MASTER="your master passphrase"
 dev-claw standup --format slack
 ```
 
