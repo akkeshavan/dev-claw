@@ -16,8 +16,8 @@ pub enum ReleaseAction {
     },
     /// Suggest a semver bump, draft notes, and optionally create a git tag
     Cut {
-        /// Override the suggested version (e.g. v1.2.3)
-        #[arg(long)]
+        /// Version to release, e.g. v1.2.3 (auto-suggested if omitted)
+        #[arg(value_name = "VERSION")]
         version: Option<String>,
         /// Print what would happen without writing any files or tags
         #[arg(long)]

@@ -12,15 +12,27 @@ use rand::RngCore;
 // ── Known providers ───────────────────────────────────────────────────────────
 
 /// LLM providers available for `config set-key` and `auto_detect_provider`.
-pub const LLM_PROVIDERS: &[&str] = &["deepseek", "openai", "claude", "sarvam", "mistral"];
+pub const LLM_PROVIDERS: &[&str] = &[
+    "deepseek",
+    "openai",
+    "anthropic",
+    "claude",
+    "groq",
+    "mistral",
+    "openrouter",
+    "sarvam",
+];
 
 /// All valid key names (LLM + cloud tokens).
 pub const ALL_PROVIDERS: &[&str] = &[
     "deepseek",
     "openai",
+    "anthropic",
     "claude",
-    "sarvam",
+    "groq",
     "mistral",
+    "openrouter",
+    "sarvam",
     "do-token",
     "hetzner-token",
 ];
@@ -459,9 +471,12 @@ mod tests {
     fn llm_providers_contains_expected_entries() {
         assert!(LLM_PROVIDERS.contains(&"deepseek"));
         assert!(LLM_PROVIDERS.contains(&"openai"));
+        assert!(LLM_PROVIDERS.contains(&"anthropic"));
         assert!(LLM_PROVIDERS.contains(&"claude"));
-        assert!(LLM_PROVIDERS.contains(&"sarvam"));
+        assert!(LLM_PROVIDERS.contains(&"groq"));
         assert!(LLM_PROVIDERS.contains(&"mistral"));
+        assert!(LLM_PROVIDERS.contains(&"openrouter"));
+        assert!(LLM_PROVIDERS.contains(&"sarvam"));
     }
 
     #[test]

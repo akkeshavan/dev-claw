@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn rejects_unknown_provider() {
-        let err = validate_provider("anthropic").unwrap_err();
+        let err = validate_provider("unknown-xyz").unwrap_err();
         assert!(err.to_string().contains("Unknown provider"));
     }
 

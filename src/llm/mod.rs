@@ -10,7 +10,7 @@ pub trait LlmClient: Send + Sync {
 }
 
 /// Returns the correct LLM client for a provider name.
-/// DeepSeek, OpenAI, Ollama, Sarvam, and Mistral all use the OpenAI-compatible endpoint.
+/// DeepSeek, OpenAI, Groq, Ollama, OpenRouter, Sarvam, and Mistral all use the OpenAI-compatible endpoint.
 pub fn client_for(provider: &str, api_key: &str) -> Box<dyn LlmClient> {
     match provider {
         "deepseek" => Box::new(openai_compat::Client::new(
@@ -23,12 +23,24 @@ pub fn client_for(provider: &str, api_key: &str) -> Box<dyn LlmClient> {
             api_key,
             "gpt-4o-mini",
         )),
+        "groq" => Box::new(openai_compat::Client::new(
+            "https://api.groq.com/openai/v1",
+            api_key,
+            "llama-3.3-70b-versatile",
+        )),
         "ollama" => Box::new(openai_compat::Client::new(
             "http://localhost:11434/v1",
             "ollama",
             "llama3",
         )),
-        "claude" => Box::new(anthropic::Client::new(api_key, "claude-haiku-4-5-20251001")),
+        "openrouter" => Box::new(openai_compat::Client::new(
+            "https://openrouter.ai/api/v1",
+            api_key,
+            "openai/gpt-4o-mini",
+        )),
+        "anthropic" | "claude" => {
+            Box::new(anthropic::Client::new(api_key, "claude-haiku-4-5-20251001"))
+        }
         "sarvam" => Box::new(openai_compat::Client::new(
             "https://api.sarvam.ai/v1",
             api_key,
@@ -57,7 +69,15 @@ mod tests {
     #[test]
     fn known_providers_return_clients() {
         for provider in [
-            "deepseek", "openai", "claude", "ollama", "sarvam", "mistral",
+            "deepseek",
+            "openai",
+            "groq",
+            "ollama",
+            "openrouter",
+            "anthropic",
+            "claude",
+            "sarvam",
+            "mistral",
         ] {
             let _ = client_for(provider, "sk-test");
         }
