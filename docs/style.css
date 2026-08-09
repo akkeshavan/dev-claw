@@ -1,0 +1,269 @@
+:root {
+  --bg:          #0d1117;
+  --bg-2:        #161b22;
+  --bg-3:        #21262d;
+  --border:      #30363d;
+  --text:        #e6edf3;
+  --text-muted:  #8b949e;
+  --accent:      #58a6ff;
+  --green:       #3fb950;
+  --radius:      6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, pre {
+  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 2rem;
+}
+
+.nav-brand {
+  font-family: ui-monospace, monospace;
+  font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px;
+}
+
+.nav-links { list-style: none; display: flex; gap: 1.5rem; align-items: center; }
+
+.nav-links a { color: var(--text-muted); font-size: 0.9rem; transition: color 0.15s; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+
+.btn-outline {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.3rem 0.75rem; color: var(--text) !important; font-size: 0.875rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn-outline:hover {
+  border-color: var(--accent); background: rgba(88,166,255,0.08); text-decoration: none !important;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 5rem 2rem 4rem; text-align: center;
+}
+
+.hero-inner { max-width: 820px; margin: 0 auto; }
+
+.hero-title {
+  display: block;
+  font-family: ui-monospace, monospace;
+  font-size: 4rem; font-weight: 800; letter-spacing: -2px;
+  color: var(--accent); margin-bottom: 1rem; line-height: 1;
+}
+
+.tagline {
+  font-size: 1.6rem; font-weight: 700; color: var(--text);
+  margin-bottom: 0.75rem; letter-spacing: -0.5px;
+}
+
+.sub-tagline {
+  font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem;
+  max-width: 580px; margin-left: auto; margin-right: auto;
+}
+
+.install-cmd {
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0.8rem 1.25rem;
+  margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--green);
+  max-width: 100%; overflow-x: auto;
+}
+
+.install-cmd .prompt { color: var(--text-muted); user-select: none; }
+
+.hero-badges {
+  display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+}
+
+.badge {
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: 2rem;
+  padding: 0.25rem 0.75rem; font-size: 0.75rem; color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.section { padding: 4rem 0; }
+
+.section-alt {
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+h2 {
+  font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.5px;
+}
+
+.section-sub { color: var(--text-muted); margin-bottom: 2.5rem; }
+
+/* ── Quick start code block ───────────────────────────────────────────────── */
+.code-block {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin: 1rem 0;
+}
+
+.code-header {
+  background: var(--bg-3); border-bottom: 1px solid var(--border);
+  padding: 0.4rem 1rem; font-size: 0.75rem; color: var(--text-muted);
+}
+
+.code-block pre {
+  padding: 1.25rem; overflow-x: auto; font-size: 0.875rem; line-height: 1.65; color: var(--text);
+}
+
+.comment { color: var(--text-muted); }
+
+/* ── Command groups ───────────────────────────────────────────────────────── */
+.cmd-group { margin-bottom: 3rem; }
+
+.cmd-group h3 {
+  font-size: 0.8rem; font-family: ui-monospace, monospace;
+  color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px;
+  margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+}
+
+.cmd-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;
+}
+
+.cmd-card {
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+
+.cmd-card:hover { border-color: var(--accent); }
+
+.cmd-name {
+  display: block; font-size: 0.875rem; color: var(--green);
+  margin-bottom: 0.6rem; font-weight: 600;
+}
+
+.cmd-card p {
+  font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5;
+}
+
+.cmd-card p code {
+  background: var(--bg-3); border-radius: 3px; padding: 0.1em 0.3em; color: var(--text);
+}
+
+.cmd-example {
+  background: var(--bg-3); border-radius: 4px; padding: 0.6rem 0.8rem;
+  font-size: 0.775rem; color: var(--text-muted); overflow-x: auto;
+  border-left: 2px solid var(--border); white-space: pre;
+}
+
+/* ── Use cases ────────────────────────────────────────────────────────────── */
+.use-case-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;
+}
+
+.use-case-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.5rem; transition: border-color 0.15s;
+}
+
+.use-case-card:hover { border-color: var(--accent); }
+
+.uc-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+
+.use-case-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+.use-case-card p {
+  font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5;
+}
+
+/* ── Providers table ──────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-bottom: 1rem; }
+
+.providers-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+.providers-table th,
+.providers-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+
+.providers-table th {
+  background: var(--bg-2); color: var(--text-muted);
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.providers-table tr:hover td { background: var(--bg-2); }
+
+.providers-table code {
+  background: var(--bg-3); border-radius: 3px; padding: 0.1em 0.4em; color: var(--accent);
+}
+
+.table-note { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.75rem; }
+.table-note code { background: var(--bg-3); border-radius: 3px; padding: 0.1em 0.4em; }
+
+/* ── Install ──────────────────────────────────────────────────────────────── */
+.install-methods { display: grid; gap: 2.5rem; }
+
+.install-method h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+.install-method > p { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+.platform-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.platform-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0.75rem 1rem; font-size: 0.85rem;
+}
+
+.platform-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+.platform-item strong { display: block; margin-bottom: 0.2rem; }
+.platform-item code { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  background: var(--bg-2); border-top: 1px solid var(--border);
+  padding: 2rem 0; font-size: 0.875rem; color: var(--text-muted);
+}
+
+.footer-inner { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.footer-brand { font-family: ui-monospace, monospace; font-weight: 700; color: var(--accent); }
+.footer-sep { color: var(--border); }
+.footer a { color: var(--text-muted); }
+.footer a:hover { color: var(--text); }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .navbar { padding: 0.75rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
+  .nav-links { gap: 1rem; }
+  .hero { padding: 3rem 1rem 2.5rem; }
+  .hero-title { font-size: 2.75rem; }
+  .tagline { font-size: 1.3rem; }
+  .install-cmd { font-size: 0.78rem; }
+  .cmd-grid { grid-template-columns: 1fr; }
+  .use-case-grid { grid-template-columns: 1fr; }
+  .platform-list { grid-template-columns: 1fr; }
+}

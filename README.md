@@ -1,40 +1,93 @@
 # dev-claw
 
-**AI-powered CLI daemon for SDLC automation.**  
-Stop context-switching to do the non-coding parts of coding.
+**AI-powered CLI daemon for SDLC automation.**
 
-dev-claw automates the chores that surround writing software — commit messages, code review, dependency audits, standup updates, release notes, cloud VMs, and more — using whatever AI provider you already have a key for.
+Stop context-switching to do the non-coding parts of coding. dev-claw brings AI into every phase of your workflow — from a broken build to a shipped release — using whatever LLM provider you already have a key for.
 
-- **BYOK** — bring your own API key (DeepSeek, OpenAI, Claude, Sarvam, Mistral, Ollama). Keys are stored in `~/dev-claw/creds/` as AES-256-GCM encrypted files, never in plain config files.
-- **Local-first** — no account, no telemetry, no backend. Usage quota tracked in a local SQLite database.
-- **Composable** — chain commands into shareable workflows.
+[![CI](https://github.com/akkeshavan/dev-claw/actions/workflows/ci.yml/badge.svg)](https://github.com/akkeshavan/dev-claw/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/akkeshavan/dev-claw)](https://github.com/akkeshavan/dev-claw/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## Features
+
+- **14 commands** — doctor, git commit/pr/hook, review diff/pr, forensic explain/blame, env check/guard/hook, deps audit/outdated, mock gen/factory, standup, release notes/cut, cloud up/down/ls/ssh, workflow, memory, config
+- **BYOK** — bring your own API key. Supports OpenAI, Anthropic, DeepSeek, Groq, Mistral, Ollama, OpenRouter, and any OpenAI-compatible endpoint
+- **Encrypted credentials** — keys stored with AES-256-GCM + Argon2id, never in plain text
+- **Per-project memory** — learns your stack and preferences across sessions for better responses
+- **Safety-first** — never deletes anything without confirmation; file writes restricted to the current working directory
+- **Local-first** — no account, no telemetry, no backend. Usage quota tracked in a local SQLite database
 
 ---
 
 ## Install
 
-**From source** (requires Rust 1.75+):
+### curl (recommended — macOS and Linux)
 
 ```sh
-git clone https://github.com/yourusername/dev-claw
+curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
+```
+
+Auto-detects your OS and architecture, verifies SHA-256, installs to `~/.local/bin`.
+
+### Download binary
+
+Download the pre-built binary for your platform from [Releases](https://github.com/akkeshavan/dev-claw/releases/latest):
+
+| Platform | File |
+|---|---|
+| macOS — Apple Silicon | `dev-claw-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
+| macOS — Intel | `dev-claw-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
+| Linux x86_64 (static) | `dev-claw-vX.Y.Z-x86_64-unknown-linux-musl.tar.gz` |
+| Linux ARM64 (static) | `dev-claw-vX.Y.Z-aarch64-unknown-linux-musl.tar.gz` |
+| Windows x86_64 | `dev-claw-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
+
+Extract and copy the `dev-claw` binary to any directory in your `$PATH`.
+
+### Build from source
+
+**Prerequisites:** Rust 1.75+ — install from [rustup.rs](https://rustup.rs)
+
+No other system dependencies are needed. The build uses `rustls` (pure-Rust TLS) and bundles SQLite, so `openssl` and `libsqlite3-dev` are not required.
+
+```sh
+git clone https://github.com/akkeshavan/dev-claw
 cd dev-claw
+cargo build --release
+# Binary is at: target/release/dev-claw
+```
+
+To install to `~/.cargo/bin`:
+
+```sh
 cargo install --path .
 ```
 
-Pre-built binaries for macOS, Linux, and Windows coming soon.
+To run the test suite:
+
+```sh
+cargo test        # 275 tests
+cargo clippy      # zero warnings enforced
+cargo fmt --check
+```
 
 ---
 
-## Quick start
+## Quick Start
 
 ```sh
-# 1. Store an API key (encrypted in ~/dev-claw/creds/ — prompts for a master passphrase on first use)
-dev-claw config set-key --provider deepseek
+# 1. Set an API key — pick any provider
+dev-claw config set-key --provider deepseek   # cheapest
+dev-claw config set-key --provider openai     # most capable
+dev-claw config set-key --provider ollama     # local, no key needed
 
-# 2. Detect your stack and generate a .devclawrc
+# 2. Initialise a project (generates .devclawrc)
 dev-claw init
 
-# 3. Done. Try something:
+# 3. Start automating
+cargo build 2>&1 | dev-claw doctor
+dev-claw git commit
 dev-claw standup
 ```
 
@@ -43,18 +96,20 @@ dev-claw standup
 ## Commands
 
 ### `dev-claw doctor`
-Diagnose build errors. Pipe stderr from any tool and get an explanation + fix.
+
+Pipe any build log, compiler error, or crash dump. Get root cause + a copy-pasteable fix. No preamble.
 
 ```sh
 cargo build 2>&1 | dev-claw doctor
 npm run build 2>&1 | dev-claw doctor
+cat ci-failure.log | dev-claw doctor
 ```
 
 ---
 
 ### `dev-claw git`
 
-**`commit`** — scan staged changes and generate a Conventional Commits message.
+**`commit`** — generate a Conventional Commits message from staged diff.
 
 ```sh
 git add -p
@@ -68,7 +123,7 @@ dev-claw git pr
 dev-claw git pr --base develop
 ```
 
-**`hook`** — install a `prepare-commit-msg` hook so commit message generation runs automatically.
+**`hook`** — install a `prepare-commit-msg` hook so commit generation runs automatically.
 
 ```sh
 dev-claw git hook
@@ -78,15 +133,13 @@ dev-claw git hook
 
 ### `dev-claw review`
 
-AI code review with structured output: Summary → Findings (🔴 Critical / 🟠 Major / 🟡 Minor / ⚪ Nitpick) → Positives.
+AI code review: Summary → Findings (Critical / Major / Minor / Nitpick) → Positives.
 
 ```sh
-dev-claw review diff                          # review all uncommitted changes
-dev-claw review diff --staged                 # review only staged changes
-dev-claw review diff --focus security         # security lens (OWASP Top 10)
-dev-claw review diff --focus performance      # performance lens
-dev-claw review pr 142                        # review GitHub PR #142 (needs gh CLI)
-dev-claw review pr 142 --focus style
+dev-claw review diff                      # all uncommitted changes
+dev-claw review diff --staged             # only staged changes
+dev-claw review diff --focus security     # OWASP Top 10 lens
+dev-claw review pr 142                    # GitHub PR by number (needs gh CLI)
 ```
 
 ---
@@ -97,27 +150,27 @@ Explain why code exists using `git blame` and LLM analysis.
 
 ```sh
 dev-claw forensic explain src/auth/token.rs          # explain entire file
-dev-claw forensic explain src/auth/token.rs --lines 40-80  # specific line range
-dev-claw forensic blame src/auth/token.rs            # show annotated blame summary
+dev-claw forensic explain src/auth/token.rs --lines 40-80
+dev-claw forensic blame src/auth/token.rs            # annotated blame summary
 ```
 
 ---
 
 ### `dev-claw env`
 
-**`check`** — diff `.env` against `.env.example` and report missing, empty, or extra keys.
+**`check`** — diff `.env` against `.env.example`; report missing, empty, or extra keys.
 
 ```sh
 dev-claw env check
 ```
 
-**`guard`** — scan staged changes for secrets about to be committed. Blocks commit if found.
+**`guard`** — scan staged changes for secrets about to be committed.
 
 ```sh
 dev-claw env guard
 ```
 
-**`hook`** — install pre-commit (`env guard`) and post-checkout (`env check`) hooks.
+**`hook`** — install pre-commit (`env guard`) and post-checkout (`env check`) git hooks.
 
 ```sh
 dev-claw env hook
@@ -127,17 +180,12 @@ dev-claw env hook
 
 ### `dev-claw deps`
 
-**`audit`** — run security audits across all detected package managers (`cargo audit`, `npm audit`, `govulncheck`, `pip-audit`). Add `--triage` to get an LLM risk ranking.
+Security audits and outdated-package checks across all detected package managers (Cargo, npm, Go, pip) in one shot.
 
 ```sh
-dev-claw deps audit
-dev-claw deps audit --triage
-```
-
-**`outdated`** — check for outdated packages across all detected package managers.
-
-```sh
-dev-claw deps outdated
+dev-claw deps audit              # run cargo audit, npm audit, govulncheck, pip-audit
+dev-claw deps audit --triage     # + AI risk ranking: fix now / later / ignore
+dev-claw deps outdated           # check for newer versions
 ```
 
 Auto-detects package managers from: `Cargo.toml`, `package.json`, `go.mod`, `pyproject.toml`, `requirements.txt`.
@@ -148,19 +196,9 @@ Auto-detects package managers from: `Cargo.toml`, `package.json`, `go.mod`, `pyp
 
 Generate realistic fixture data from any schema.
 
-**`gen`** — generate test records from a SQL DDL, TypeScript types, JSON Schema, Protobuf, or any schema file.
-
 ```sh
 dev-claw mock gen schema.sql --count 20 --format sql
 dev-claw mock gen types.ts --format json --out fixtures.json
-dev-claw mock gen schema.proto --format csv
-```
-
-Supported formats: `json`, `ts`, `sql`, `csv`.
-
-**`factory`** — generate TypeScript factory functions from a types file.
-
-```sh
 dev-claw mock factory src/types/user.ts --out src/__tests__/factories.ts
 ```
 
@@ -168,33 +206,30 @@ dev-claw mock factory src/types/user.ts --out src/__tests__/factories.ts
 
 ### `dev-claw standup`
 
-Generate a daily standup update from your recent git commits and active branches.
+Generate a daily standup update from git history.
 
 ```sh
 dev-claw standup
 dev-claw standup --since "2 days ago"
-dev-claw standup --format slack       # emoji bullets, *bold* headers
-dev-claw standup --format markdown    # ## sections
-dev-claw standup --format plain       # default, no markup
+dev-claw standup --format slack     # emoji bullets, *bold* headers
+dev-claw standup --format markdown
 ```
 
 ---
 
 ### `dev-claw release`
 
-**`notes`** — draft polished, user-facing release notes from commits since the last tag.
+**`notes`** — draft release notes from commits since the last tag.
 
 ```sh
 dev-claw release notes
-dev-claw release notes --since v1.1.0   # compare from a specific ref
+dev-claw release notes --since v1.1.0
 ```
 
-**`cut`** — suggest a semver bump, draft release notes, prepend `CHANGELOG.md`, and create an annotated git tag.
+**`cut`** — write `CHANGELOG.md` and create an annotated git tag. Prompts for confirmation before writing.
 
 ```sh
-dev-claw release cut
-dev-claw release cut --version v2.0.0   # override the suggested version
-dev-claw release cut --dry-run          # preview without writing anything
+dev-claw release cut v2.0.0
 ```
 
 ---
@@ -203,83 +238,57 @@ dev-claw release cut --dry-run          # preview without writing anything
 
 Provision and destroy ephemeral VMs across cloud providers.
 
-**`up`** — spin up a VM.
-
 ```sh
-dev-claw cloud up --provider do                        # DigitalOcean
-dev-claw cloud up --provider hetzner --size cx21
-dev-claw cloud up --provider aws --region us-west-2
-dev-claw cloud up --provider azure
-dev-claw cloud up --provider gcp --region us-central1-a
-```
-
-**`ls`** — list all VMs provisioned by dev-claw.
-
-```sh
+dev-claw cloud up --provider aws --region us-east-1 --size small
 dev-claw cloud ls
+dev-claw cloud ssh my-vm
+dev-claw cloud down my-vm        # prompts for confirmation before destroying
 ```
 
-**`ssh`** — SSH into a VM by name or ID.
-
-```sh
-dev-claw cloud ssh claw-a3f7c2
-```
-
-**`down`** — destroy a VM.
-
-```sh
-dev-claw cloud down claw-a3f7c2
-```
-
-DigitalOcean and Hetzner use API tokens stored in the encrypted credential vault (`do-token` and `hetzner-token`). AWS, Azure, and GCP delegate to their CLIs (`aws`, `az`, `gcloud`) — any existing auth method (SSO, IAM roles, service accounts) works automatically.
+Supported providers: AWS, GCP, Azure, Fly.io. AWS/GCP/Azure delegate to their CLIs (`aws`, `gcloud`, `az`) — any existing auth (SSO, IAM roles, service accounts) works automatically.
 
 ---
 
 ### `dev-claw workflow`
 
-Define multi-step pipelines in `.devclawrc`, run them locally, and share them as GitHub Gists.
-
-**`ls`** — list all workflows (project + global).
+Define multi-step pipelines in `.devclawrc`, run them locally, and share via GitHub Gist.
 
 ```sh
 dev-claw workflow ls
-```
-
-**`run`** — execute a workflow step by step. Stops on the first failure.
-
-```sh
 dev-claw workflow run pre-push
-dev-claw workflow run pre-push --dry-run   # preview steps without running
-```
-
-**`publish`** — publish a workflow as a public GitHub Gist (requires `gh` CLI).
-
-```sh
 dev-claw workflow publish pre-push
-# → dev-claw workflow import https://gist.github.com/...
-```
-
-**`import`** — import a workflow from a GitHub Gist URL or any raw TOML URL.
-
-```sh
-dev-claw workflow import https://gist.github.com/user/abc123
+dev-claw workflow import gist:abc123def456
 ```
 
 ---
 
-### `dev-claw usage`
+### `dev-claw memory`
 
-Show how much of the free-tier quota has been used this month.
+Per-project memory that persists across sessions. Context is injected into every LLM call for better answers over time.
 
 ```sh
-dev-claw usage
+dev-claw memory note "using postgres 16 with pgvector"
+dev-claw memory feedback "prefer concise responses"
+dev-claw memory ls
+dev-claw memory clear            # clears this project only
+dev-claw memory clear --global   # clears global SQLite store
+```
+
+---
+
+### `dev-claw config` / `dev-claw usage`
+
+```sh
+dev-claw config set-key --provider deepseek
+dev-claw config list-keys
+dev-claw usage                   # token quota for this month
 ```
 
 ---
 
 ## Configuration
 
-Run `dev-claw init` to generate a `.devclawrc` starter, or write one manually:
+`dev-claw init` generates a `.devclawrc` starter. Or write one manually:
 
 ```toml
 [stack]
@@ -287,127 +296,52 @@ name            = "typescript-nextjs"
 package_manager = "pnpm"
 
 [usage]
-monthly_limit   = 200   # total LLM calls per month
-warn_at_percent = 80    # warn when 80% used
+monthly_limit   = 200
+warn_at_percent = 80
 
 [doctor]
-max_log_lines          = 100
-auto_ignore_patterns   = ["node_modules", ".next", "dist"]
+max_log_lines        = 100
+auto_ignore_patterns = ["node_modules", ".next", "dist"]
 
 [[workflows]]
-name        = "pre-push"
-description = "Security gates before pushing"
-steps = [
-  "env check",
-  "deps audit",
-  "review diff --staged --focus security",
-]
+name  = "pre-push"
+steps = ["env check", "deps audit", "review diff --staged --focus security"]
 
 [[workflows]]
 name  = "ship"
 steps = ["deps audit --triage", "release notes", "release cut"]
 ```
 
-dev-claw searches upward from the current directory for `.devclawrc`, so a repo-root file covers the whole project.
+dev-claw searches upward from the current directory for `.devclawrc`.
 
 ---
 
-## API providers
+## API Providers
 
-### Supported providers
+| Provider | Key name | Best for |
+|---|---|---|
+| OpenAI | `openai` | Best overall quality |
+| Anthropic | `anthropic` | Nuanced reasoning, long context |
+| DeepSeek | `deepseek` | Best cost / quality ratio |
+| Groq | `groq` | Fastest inference |
+| Mistral | `mistral` | EU data residency |
+| Ollama | `ollama` | Local inference, no API key needed |
+| OpenRouter | `openrouter` | Unified access to 200+ models |
+| Custom | `openai-compat` | Self-hosted LLMs, vLLM, LM Studio |
 
-| Provider | Notes |
-|---|---|
-| `deepseek` | Cheapest per-token, recommended default |
-| `openai` | GPT-4o-mini |
-| `claude` | Claude Haiku (Anthropic) |
-| `sarvam` | Indian-language specialist (Sarvam AI) |
-| `mistral` | mistral-small-latest |
-| `ollama` | Local inference, fully offline, no key needed |
+Keys are stored in `~/.dev-claw/credentials.enc` encrypted with AES-256-GCM + Argon2id — never in plain text, never sent anywhere except your chosen provider.
 
-### Credential store
-
-Keys are stored in **`~/dev-claw/creds/`** as AES-256-GCM encrypted files — one file per provider. No OS keychain is used; encryption relies entirely on a master passphrase you set on first use.
-
-**Key derivation**: Argon2id (64 MB memory, 3 iterations) — deliberately slow to resist brute-force if the files are ever exfiltrated.
-
-**File layout:**
-```
-~/dev-claw/creds/
-  .salt           # 32-byte random salt, written once
-  deepseek.enc    # 12-byte nonce + AES-256-GCM ciphertext
-  openai.enc
-  claude.enc
-  sarvam.enc
-  mistral.enc
-```
-
-### Setup
+**Per-command override:**
 
 ```sh
-# First call creates the vault and prompts to set a master passphrase
-dev-claw config set-key --provider deepseek
-
-# Add more providers — prompts for master passphrase once per session
-dev-claw config set-key --provider mistral
-dev-claw config set-key --provider sarvam
-
-# See what's stored
-dev-claw config list-keys
+DEV_CLAW_PROVIDER=anthropic dev-claw review diff --focus security
 ```
 
-On first run, you are prompted to create and confirm a master passphrase. Subsequent commands prompt for it once per process invocation — the derived key is cached in memory for the session.
-
-### CI / scripting
-
-Set `DEV_CLAW_MASTER` to skip the interactive prompt:
+**CI / scripting (skip interactive passphrase prompt):**
 
 ```sh
 export DEV_CLAW_MASTER="my passphrase"
 dev-claw standup --format slack
-```
-
-### Per-command provider override
-
-```sh
-DEV_CLAW_PROVIDER=claude dev-claw review diff --focus security
-DEV_CLAW_PROVIDER=mistral dev-claw git commit
-```
-
-### Cloud provider tokens
-
-DigitalOcean and Hetzner API tokens are stored in the same encrypted vault:
-
-```sh
-dev-claw config set-key --provider do-token
-dev-claw config set-key --provider hetzner-token
-```
-
-AWS, Azure, and GCP delegate to their CLIs (`aws`, `az`, `gcloud`) — any existing auth (SSO, IAM roles, service accounts) works automatically.
-
----
-
-## Workflow recipes
-
-**Pre-push gate:**
-```toml
-[[workflows]]
-name  = "pre-push"
-steps = ["env check", "deps audit", "review diff --staged --focus security"]
-```
-
-**Daily routine:**
-```toml
-[[workflows]]
-name  = "morning"
-steps = ["standup --format slack", "deps outdated"]
-```
-
-**Release pipeline:**
-```toml
-[[workflows]]
-name  = "release"
-steps = ["deps audit --triage", "release cut"]
 ```
 
 ---
@@ -415,17 +349,18 @@ steps = ["deps audit --triage", "release cut"]
 ## Contributing
 
 ```sh
-git clone https://github.com/yourusername/dev-claw
+git clone https://github.com/akkeshavan/dev-claw
 cd dev-claw
 cargo build
-cargo test       # 247 tests
-cargo clippy     # zero warnings enforced
+cargo test        # 275 tests
+cargo clippy      # zero warnings enforced
+cargo fmt
 ```
 
-Pull requests welcome. Please keep functions under 40 lines and add tests for new behaviour.
+Please keep functions under 40 lines, max 2 levels of nesting, and add tests for new behaviour.
 
 ---
 
 ## License
 
-MIT
+[MIT](LICENSE) — Copyright (c) 2024 Anand Keshavan

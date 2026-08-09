@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed to create releases and upload assets
+
+env:
+  CARGO_TERM_COLOR: always
+  BINARY_NAME: dev-claw
+
+jobs:
+  # Run tests once before building all platforms
+  test:
+    name: Pre-release tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo test --all
+
+  # Create the GitHub Release before any build jobs run so uploads don't race
+  create-release:
+    name: Create GitHub Release
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: create-release
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Linux x86-64 glibc (Ubuntu 22.04+, Fedora 38+) ────────────────
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            archive: tar.gz
+            install_musl: false
+
+          # ── Linux x86-64 musl (statically linked, any Linux distro) ───────
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+            archive: tar.gz
+            install_musl: true
+
+          # ── Linux ARM64 glibc (Ubuntu 24.04+) ─────────────────────────────
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+            archive: tar.gz
+            install_musl: false
+
+          # ── Linux ARM64 musl (statically linked, any Linux distro) ────────
+          - target: aarch64-unknown-linux-musl
+            runner: ubuntu-24.04-arm
+            archive: tar.gz
+            install_musl: true
+
+          # ── Windows x86-64 ─────────────────────────────────────────────────
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            archive: zip
+            install_musl: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ matrix.target }}-cargo-
+
+      - name: Install musl tools
+        if: matrix.install_musl
+        run: sudo apt-get install -y musl-tools
+
+      # ── Build ──────────────────────────────────────────────────────────────
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # ── Smoke test ─────────────────────────────────────────────────────────
+      - name: Smoke test
+        shell: bash
+        run: |
+          EXT=""
+          [[ "${{ matrix.archive }}" == "zip" ]] && EXT=".exe"
+          "target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}${EXT}" --version
+
+      # ── Package ────────────────────────────────────────────────────────────
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Package (Unix tar.gz)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          ASSET_NAME="${{ env.BINARY_NAME }}-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}"
+          BINARY="target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}"
+          mkdir -p "dist/${ASSET_NAME}"
+          cp "${BINARY}" "dist/${ASSET_NAME}/"
+          cp README.md LICENSE "dist/${ASSET_NAME}/" 2>/dev/null || true
+          cd dist
+          tar czf "${ASSET_NAME}.tar.gz" "${ASSET_NAME}"
+          sha256sum "${ASSET_NAME}.tar.gz" > "checksums-${{ matrix.target }}.txt"
+          echo "ASSET=dist/${ASSET_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "CHECKSUM_FILE=dist/checksums-${{ matrix.target }}.txt" >> $GITHUB_ENV
+
+      - name: Package (Windows zip)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $assetName = "${{ env.BINARY_NAME }}-${version}-${{ matrix.target }}"
+          $binary = "target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}.exe"
+          New-Item -ItemType Directory -Force -Path "dist/$assetName"
+          Copy-Item $binary "dist/$assetName/"
+          if (Test-Path "README.md") { Copy-Item "README.md" "dist/$assetName/" }
+          if (Test-Path "LICENSE") { Copy-Item "LICENSE" "dist/$assetName/" }
+          Compress-Archive -Path "dist/$assetName" -DestinationPath "dist/$assetName.zip"
+          $hash = (Get-FileHash "dist/$assetName.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $assetName.zip" | Out-File -FilePath "dist/checksums-${{ matrix.target }}.txt"
+          echo "ASSET=dist/$assetName.zip" >> $env:GITHUB_ENV
+          echo "CHECKSUM_FILE=dist/checksums-${{ matrix.target }}.txt" >> $env:GITHUB_ENV
+
+      # ── Upload checksum fragment as artifact ──────────────────────────────
+      - name: Upload checksum fragment
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums-${{ matrix.target }}
+          path: ${{ env.CHECKSUM_FILE }}
+
+      # ── Upload asset to the GitHub Release ────────────────────────────────
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          files: ${{ env.ASSET }}
+
+  # macOS builds (aarch64 and x86_64) are built locally and pushed via
+  # scripts/release-macos.sh, which also combines checksums. See that script.

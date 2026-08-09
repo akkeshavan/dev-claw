@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dev-claw — AI-powered SDLC automation</title>
+  <meta name="description" content="Open-source CLI daemon that brings AI into every phase of your development workflow. BYOK, 8+ LLM providers, 14 commands.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="#" class="nav-brand">dev-claw</a>
+  <ul class="nav-links">
+    <li><a href="#features">Commands</a></li>
+    <li><a href="#use-cases">Use Cases</a></li>
+    <li><a href="#providers">Providers</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="https://github.com/akkeshavan/dev-claw" class="btn-outline">GitHub</a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="hero-title">dev-claw</span>
+    <p class="tagline">AI-powered SDLC automation for the terminal</p>
+    <p class="sub-tagline">
+      Bring your own key. Works with 8+ LLM providers.
+      14 commands covering the full dev workflow — from a broken build to a shipped release.
+    </p>
+    <div class="install-cmd">
+      <span class="prompt">$</span>
+      <code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code>
+    </div>
+    <div class="hero-badges">
+      <span class="badge">Open Source</span>
+      <span class="badge">BYOK</span>
+      <span class="badge">Rust</span>
+      <span class="badge">MIT License</span>
+      <span class="badge">8+ LLM Providers</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ── Quick Start ──────────────────────────────────────────────────────── -->
+<section class="section" id="quickstart">
+  <div class="container">
+    <h2>Quick Start</h2>
+    <p class="section-sub">Three steps to your first AI-assisted commit.</p>
+    <div class="code-block">
+      <div class="code-header">shell</div>
+      <pre><code><span class="comment"># 1. Install</span>
+curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
+
+<span class="comment"># 2. Add an API key — pick any provider</span>
+dev-claw config set-key --provider deepseek   <span class="comment"># cheapest</span>
+dev-claw config set-key --provider openai     <span class="comment"># most capable</span>
+dev-claw config set-key --provider ollama     <span class="comment"># local, no key needed</span>
+
+<span class="comment"># 3. Start automating</span>
+cargo build 2&gt;&amp;1 | dev-claw doctor   <span class="comment"># diagnose a build error</span>
+dev-claw git commit                   <span class="comment"># AI-written commit message</span>
+dev-claw standup                      <span class="comment"># today's standup from git</span></code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── Commands ─────────────────────────────────────────────────────────── -->
+<section class="section section-alt" id="features">
+  <div class="container">
+    <h2>Commands</h2>
+    <p class="section-sub">14 commands covering the full software development lifecycle.</p>
+
+    <div class="cmd-group">
+      <h3>Debugging</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw doctor</code>
+          <p>Pipe any build log, compiler error, or crash dump and get a one-shot root cause + fix. No preamble, no filler — just the diagnosis.</p>
+          <pre class="cmd-example">cargo build 2&gt;&amp;1 | dev-claw doctor
+npm run build 2&gt;&amp;1 | dev-claw doctor
+cat ci-failure.log | dev-claw doctor</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Git</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw git commit</code>
+          <p>Generate a conventional commit message from your staged diff. Reads context from project memory to stay consistent with your style.</p>
+          <pre class="cmd-example">git add -p &amp;&amp; dev-claw git commit</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw git pr</code>
+          <p>Draft a pull request description from the commit history on your current branch versus main. Copy-paste ready.</p>
+          <pre class="cmd-example">dev-claw git pr</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw git hook</code>
+          <p>Install a pre-commit git hook that automatically runs env scanning and review before every commit.</p>
+          <pre class="cmd-example">dev-claw git hook --install</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Code Review</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw review diff</code>
+          <p>Review staged or unstaged changes before committing. Catches bugs, security issues, and style problems before they land.</p>
+          <pre class="cmd-example">dev-claw review diff --staged</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw review pr</code>
+          <p>Review a GitHub PR by number. Fetches the full diff and provides structured feedback from your configured LLM.</p>
+          <pre class="cmd-example">dev-claw review pr 142</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Code Intelligence</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw forensic explain</code>
+          <p>Explain what a file does using its full git history, blame data, and source. Answers "why does this exist?" for inherited code.</p>
+          <pre class="cmd-example">dev-claw forensic explain src/auth.rs</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw forensic blame</code>
+          <p>Trace why a specific line of code exists — which commit introduced it and what problem it was solving at the time.</p>
+          <pre class="cmd-example">dev-claw forensic blame src/api.rs:87</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Environment &amp; Security</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw env check</code>
+          <p>Scan for missing environment variables, exposed secrets in tracked files, and misconfigured .env setups.</p>
+          <pre class="cmd-example">dev-claw env check</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw env guard</code>
+          <p>Wrap any command with env enforcement — fails fast if required variables are missing before the process starts.</p>
+          <pre class="cmd-example">dev-claw env guard -- npm run deploy</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw env hook</code>
+          <p>Install a git pre-commit hook that scans for accidental secret exposure before every commit, automatically.</p>
+          <pre class="cmd-example">dev-claw env hook --install</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Dependencies</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw deps audit</code>
+          <p>Run security audits across all detected package managers (Cargo, npm, Go, pip) in one shot. Add <code>--triage</code> for an AI-ranked action list: fix now vs. later vs. ignore.</p>
+          <pre class="cmd-example">dev-claw deps audit
+dev-claw deps audit --triage</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw deps outdated</code>
+          <p>Check for outdated dependencies across all detected package managers simultaneously — no switching tools per ecosystem.</p>
+          <pre class="cmd-example">dev-claw deps outdated</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Test Data</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw mock gen</code>
+          <p>Generate realistic fixture data from a type definition or schema. Outputs JSON, YAML, or SQL seed data ready for your test suite.</p>
+          <pre class="cmd-example">dev-claw mock gen --schema types/User.ts</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw mock factory</code>
+          <p>Scaffold a factory function for a given type — correctly typed, ready to paste into your test helpers.</p>
+          <pre class="cmd-example">dev-claw mock factory --type Order</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Releases &amp; Standups</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw standup</code>
+          <p>Generate daily standup bullet points from git history. Covers what you shipped, nothing more — no padding.</p>
+          <pre class="cmd-example">dev-claw standup --since yesterday
+dev-claw standup --since "last friday"</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw release notes</code>
+          <p>Draft human-readable release notes from git commits since the last tag. Ready to paste into GitHub Releases.</p>
+          <pre class="cmd-example">dev-claw release notes</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw release cut</code>
+          <p>Write CHANGELOG.md and create a signed git tag in one step. Requires confirmation before anything is written to disk.</p>
+          <pre class="cmd-example">dev-claw release cut v1.2.0</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Cloud VMs</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw cloud</code>
+          <p>Spin up and tear down ephemeral dev VMs across AWS, GCP, Azure, and Fly.io. Destroy requires explicit confirmation — nothing is deleted silently.</p>
+          <pre class="cmd-example">dev-claw cloud up --provider aws --size small
+dev-claw cloud ls
+dev-claw cloud ssh my-vm
+dev-claw cloud down my-vm</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Automation Workflows</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw workflow</code>
+          <p>Define multi-step automation in TOML, run it locally, and share via GitHub Gist. Shell-safe argument splitting, 50-step safety cap, no arbitrary remote execution.</p>
+          <pre class="cmd-example">dev-claw workflow run deploy.toml
+dev-claw workflow publish deploy.toml
+dev-claw workflow import gist:abc123def</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-group">
+      <h3>Memory &amp; Config</h3>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw memory</code>
+          <p>Per-project memory that persists across sessions. dev-claw learns your stack and preferences, injecting context into every LLM call for better answers over time.</p>
+          <pre class="cmd-example">dev-claw memory note "using postgres 16, pgvector"
+dev-claw memory feedback "prefer short responses"
+dev-claw memory ls</pre>
+        </div>
+        <div class="cmd-card">
+          <code class="cmd-name">dev-claw config / usage</code>
+          <p>Manage API keys for all providers. Keys are encrypted with AES-256-GCM and stored only on your machine — never sent to any server. Track token quota with <code>usage</code>.</p>
+          <pre class="cmd-example">dev-claw config set-key --provider anthropic
+dev-claw config list-keys
+dev-claw usage</pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Use Cases ─────────────────────────────────────────────────────────── -->
+<section class="section" id="use-cases">
+  <div class="container">
+    <h2>Use Cases</h2>
+    <p class="section-sub">How dev-claw fits into your actual day.</p>
+    <div class="use-case-grid">
+
+      <div class="use-case-card">
+        <div class="uc-icon">🔍</div>
+        <h3>Debug CI faster</h3>
+        <p>Download the failing log and pipe it in. Get root cause + a copy-pasteable fix in under 10 seconds, no scrolling through 2 000 lines.</p>
+        <pre class="cmd-example">cat ci-failure.log | dev-claw doctor</pre>
+      </div>
+
+      <div class="use-case-card">
+        <div class="uc-icon">📝</div>
+        <h3>Commit without context-switching</h3>
+        <p>Stage your changes, let dev-claw write the message. Conventional commits, properly scoped, every time — without opening a browser to remember the format.</p>
+        <pre class="cmd-example">git add -p
+dev-claw git commit</pre>
+      </div>
+
+      <div class="use-case-card">
+        <div class="uc-icon">☀️</div>
+        <h3>Monday morning standup</h3>
+        <p>Never blank on what you shipped last week. dev-claw reads your git history and writes your standup points — just edit and send.</p>
+        <pre class="cmd-example">dev-claw standup --since "last friday"</pre>
+      </div>
+
+      <div class="use-case-card">
+        <div class="uc-icon">🔒</div>
+        <h3>Pre-push safety check</h3>
+        <p>Run the full gauntlet before pushing: env scan, staged diff review, and dependency audit chained together.</p>
+        <pre class="cmd-example">dev-claw env check \
+  &amp;&amp; dev-claw review diff --staged \
+  &amp;&amp; dev-claw deps audit</pre>
+      </div>
+
+      <div class="use-case-card">
+        <div class="uc-icon">🧬</div>
+        <h3>Understand inherited code</h3>
+        <p>Dropped into an unfamiliar codebase? Explain a file's purpose from its full git history, then trace exactly why a suspicious line was added.</p>
+        <pre class="cmd-example">dev-claw forensic explain src/legacy.rs
+dev-claw forensic blame src/legacy.rs:204</pre>
+      </div>
+
+      <div class="use-case-card">
+        <div class="uc-icon">🚀</div>
+        <h3>Ship a release end-to-end</h3>
+        <p>From security audit to changelog to signed tag — three commands, confirmation required before anything is written.</p>
+        <pre class="cmd-example">dev-claw deps audit --triage
+dev-claw release notes
+dev-claw release cut v2.0.0</pre>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Providers ─────────────────────────────────────────────────────────── -->
+<section class="section section-alt" id="providers">
+  <div class="container">
+    <h2>LLM Providers</h2>
+    <p class="section-sub">Bring your own key. Switch providers per project or per command with <code>DEV_CLAW_PROVIDER</code>.</p>
+    <div class="table-wrap">
+      <table class="providers-table">
+        <thead>
+          <tr><th>Provider</th><th>Key name</th><th>Default model</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>OpenAI</strong></td>
+            <td><code>openai</code></td>
+            <td>gpt-4o</td>
+            <td>Best overall quality</td>
+          </tr>
+          <tr>
+            <td><strong>Anthropic</strong></td>
+            <td><code>anthropic</code></td>
+            <td>claude-sonnet-4</td>
+            <td>Nuanced reasoning &amp; long context</td>
+          </tr>
+          <tr>
+            <td><strong>DeepSeek</strong></td>
+            <td><code>deepseek</code></td>
+            <td>deepseek-chat</td>
+            <td>Best cost / quality ratio</td>
+          </tr>
+          <tr>
+            <td><strong>Groq</strong></td>
+            <td><code>groq</code></td>
+            <td>llama-3.3-70b-versatile</td>
+            <td>Fastest inference</td>
+          </tr>
+          <tr>
+            <td><strong>Mistral</strong></td>
+            <td><code>mistral</code></td>
+            <td>mistral-large-latest</td>
+            <td>EU data residency</td>
+          </tr>
+          <tr>
+            <td><strong>Ollama</strong></td>
+            <td><code>ollama</code></td>
+            <td>any local model</td>
+            <td>Complete privacy, no API key</td>
+          </tr>
+          <tr>
+            <td><strong>OpenRouter</strong></td>
+            <td><code>openrouter</code></td>
+            <td>200+ models</td>
+            <td>Unified access to any model</td>
+          </tr>
+          <tr>
+            <td><strong>Custom endpoint</strong></td>
+            <td><code>openai-compat</code></td>
+            <td>OpenAI-compatible</td>
+            <td>Self-hosted LLMs, vLLM, LM Studio</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">Keys are encrypted with AES-256-GCM + Argon2id and stored locally in <code>~/.dev-claw/credentials.enc</code> — never sent to any server other than your chosen provider.</p>
+  </div>
+</section>
+
+<!-- ── Install ───────────────────────────────────────────────────────────── -->
+<section class="section" id="install">
+  <div class="container">
+    <h2>Install</h2>
+
+    <div class="install-methods">
+
+      <div class="install-method">
+        <h3>curl installer (recommended)</h3>
+        <p>Auto-detects your OS and architecture. Verifies SHA-256 checksum before installing. Works on macOS and Linux.</p>
+        <div class="code-block">
+          <pre><code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code></pre>
+        </div>
+        <p>To pin a version: <code>VERSION=v0.1.0 curl -fsSL ... | sh</code></p>
+      </div>
+
+      <div class="install-method">
+        <h3>Download binary</h3>
+        <p>Pre-built binaries for every platform on <a href="https://github.com/akkeshavan/dev-claw/releases/latest">the latest GitHub Release</a>. Extract and copy to any directory in your <code>$PATH</code>.</p>
+        <div class="platform-list">
+          <div class="platform-item">
+            <span class="platform-icon">🍎</span>
+            <div>
+              <strong>macOS — Apple Silicon</strong>
+              <code>aarch64-apple-darwin.tar.gz</code>
+            </div>
+          </div>
+          <div class="platform-item">
+            <span class="platform-icon">🍎</span>
+            <div>
+              <strong>macOS — Intel</strong>
+              <code>x86_64-apple-darwin.tar.gz</code>
+            </div>
+          </div>
+          <div class="platform-item">
+            <span class="platform-icon">🐧</span>
+            <div>
+              <strong>Linux x86_64 (static)</strong>
+              <code>x86_64-unknown-linux-musl.tar.gz</code>
+            </div>
+          </div>
+          <div class="platform-item">
+            <span class="platform-icon">🐧</span>
+            <div>
+              <strong>Linux ARM64 (static)</strong>
+              <code>aarch64-unknown-linux-musl.tar.gz</code>
+            </div>
+          </div>
+          <div class="platform-item">
+            <span class="platform-icon">🪟</span>
+            <div>
+              <strong>Windows x86_64</strong>
+              <code>x86_64-pc-windows-msvc.zip</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="install-method">
+        <h3>Build from source</h3>
+        <div class="code-block">
+          <pre><code>cargo install dev-claw</code></pre>
+        </div>
+        <p>Requires Rust 1.75+. Get Rust at <a href="https://rustup.rs">rustup.rs</a>.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-brand">dev-claw</span>
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/akkeshavan/dev-claw">GitHub</a>
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/akkeshavan/dev-claw/releases">Releases</a>
+      <span class="footer-sep">·</span>
+      <a href="https://github.com/akkeshavan/dev-claw/issues">Issues</a>
+      <span class="footer-sep">·</span>
+      <span>MIT License</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
