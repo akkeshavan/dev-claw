@@ -204,9 +204,11 @@ pub fn add_feedback(text: &str, command: Option<&str>) -> Result<()> {
 
 /// Delete per-project memory file and this project's rows in the global DB.
 pub fn clear_project() -> Result<()> {
+    // Compute root once — memory_dir() also calls project_root(), so using it
+    // directly avoids a TOCTOU inconsistency if cwd shifts between the two calls.
     let root = project_root();
     let pid  = project_id(&root);
-    let path = memory_dir()?.join("memory.toml");
+    let path = root.join(".dev-claw").join("memory.toml");
     if path.exists() { std::fs::remove_file(&path)?; }
     GlobalDb::open()?.delete_project(&pid)
 }
@@ -293,11 +295,15 @@ fn memory_file() -> Result<std::path::PathBuf> {
 }
 
 fn project_id(root: &std::path::Path) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    let mut h = DefaultHasher::new();
-    root.hash(&mut h);
-    format!("{:016x}", h.finish())
+    // FNV-1a 64-bit: deterministic and stable across Rust versions.
+    // DefaultHasher is explicitly NOT guaranteed stable across compiler releases.
+    let bytes = root.to_string_lossy();
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for &b in bytes.as_bytes() {
+        hash ^= b as u64;
+        hash = hash.wrapping_mul(0x00000100000001b3);
+    }
+    format!("{:016x}", hash)
 }
 
 fn project_name(root: &std::path::Path) -> String {
@@ -324,11 +330,13 @@ fn detect_stack(root: &std::path::Path) -> Vec<String> {
 fn ensure_gitignored() {
     let root = project_root();
     let gi   = root.join(".gitignore");
-    let Ok(content) = std::fs::read_to_string(&gi) else { return; };
+    // Use empty string if .gitignore doesn't exist — we'll create it below.
+    // Previously returned early on missing file, which left .dev-claw/ unignored.
+    let content = std::fs::read_to_string(&gi).unwrap_or_default();
     if content.lines().any(|l| l.trim() == ".dev-claw" || l.trim() == ".dev-claw/") {
         return;
     }
-    let sep = if content.ends_with('\n') { "" } else { "\n" };
+    let sep = if content.ends_with('\n') || content.is_empty() { "" } else { "\n" };
     let _   = std::fs::write(&gi, format!("{content}{sep}.dev-claw/\n"));
 }
 

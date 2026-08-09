@@ -14,7 +14,9 @@ pub fn confirm(prompt: &str) -> Result<bool> {
 /// Works for both existing and not-yet-created files (canonicalizes the
 /// parent dir when the file itself doesn't exist yet).
 pub fn safe_output_path(path: &str) -> Result<std::path::PathBuf> {
-    let cwd    = std::env::current_dir()?;
+    // Canonicalize cwd so that symlinked directories (e.g. /Users → /private/Users
+    // on macOS) resolve to the same physical root as canonicalize() below.
+    let cwd    = std::env::current_dir()?.canonicalize()?;
     let joined = cwd.join(path);
     let abs    = if joined.exists() {
         joined.canonicalize()?
