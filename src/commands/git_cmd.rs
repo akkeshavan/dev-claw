@@ -73,8 +73,8 @@ Rules:
 // ── Domain type ───────────────────────────────────────────────────────────────
 
 struct Violation {
-    file:    String,
-    line:    u32,
+    file: String,
+    line: u32,
     keyword: String,
     context: String,
 }
@@ -84,10 +84,10 @@ struct Violation {
 pub async fn run(action: GitAction) -> Result<()> {
     let cfg = Config::load()?;
     match action {
-        GitAction::Check            => run_check(&cfg),
+        GitAction::Check => run_check(&cfg),
         GitAction::Commit { apply } => run_commit(&cfg, apply).await,
-        GitAction::Pr { base }      => run_pr(&cfg, &base).await,
-        GitAction::Hook             => run_hook(),
+        GitAction::Pr { base } => run_pr(&cfg, &base).await,
+        GitAction::Hook => run_hook(),
     }
 }
 
@@ -95,7 +95,7 @@ pub async fn run(action: GitAction) -> Result<()> {
 
 fn run_check(cfg: &Config) -> Result<()> {
     let keywords = effective_keywords(cfg);
-    let diff     = get_staged_diff()?;
+    let diff = get_staged_diff()?;
 
     if diff.trim().is_empty() {
         println!("✓  Nothing staged to check.");
@@ -109,7 +109,10 @@ fn run_check(cfg: &Config) -> Result<()> {
     }
 
     print_violations(&violations);
-    anyhow::bail!("{} violation(s) found — fix before committing.", violations.len())
+    anyhow::bail!(
+        "{} violation(s) found — fix before committing.",
+        violations.len()
+    )
 }
 
 async fn run_commit(cfg: &Config, apply: bool) -> Result<()> {
@@ -119,8 +122,11 @@ async fn run_commit(cfg: &Config, apply: bool) -> Result<()> {
     }
 
     let warning = enforce_quota(cfg)?;
-    let stat    = get_staged_stat()?;
-    let user    = format!("## Staged stat\n{stat}\n\n## Diff\n{}", truncate(&diff, 8_000));
+    let stat = get_staged_stat()?;
+    let user = format!(
+        "## Staged stat\n{stat}\n\n## Diff\n{}",
+        truncate(&diff, 8_000)
+    );
     let message = call_llm(COMMIT_PROMPT, &user).await?;
     let message = message.trim().to_string();
 
@@ -144,8 +150,8 @@ async fn run_pr(cfg: &Config, base: &str) -> Result<()> {
     }
 
     let warning = enforce_quota(cfg)?;
-    let diff    = get_branch_diff(base)?;
-    let user    = format!(
+    let diff = get_branch_diff(base)?;
+    let user = format!(
         "## Commits\n{commits}\n\n## Diff\n{}",
         truncate(&diff, 8_000)
     );
@@ -240,8 +246,8 @@ fn set_executable(_path: &Path) -> Result<()> {
 
 fn find_violations(diff: &str, keywords: &[String]) -> Vec<Violation> {
     let mut violations = Vec::new();
-    let mut file       = String::new();
-    let mut line_num   = 0u32;
+    let mut file = String::new();
+    let mut line_num = 0u32;
 
     for raw in diff.lines() {
         if let Some(f) = parse_diff_filename(raw) {
@@ -269,7 +275,7 @@ fn line_violations(content: &str, file: &str, line: u32, keywords: &[String]) ->
         .iter()
         .filter(|kw| content.contains(kw.as_str()))
         .map(|kw| Violation {
-            file:    file.to_string(),
+            file: file.to_string(),
             line,
             keyword: kw.clone(),
             context: content.trim().to_string(),
@@ -292,7 +298,7 @@ fn parse_hunk_start(line: &str) -> Option<u32> {
     }
     // "@@ -old +new,count @@ ..." — we want `new`
     let after_plus = line.split('+').nth(1)?;
-    let num_str    = after_plus.split([',', ' ']).next()?;
+    let num_str = after_plus.split([',', ' ']).next()?;
     num_str.parse().ok()
 }
 
@@ -301,9 +307,7 @@ fn is_added_line(line: &str) -> bool {
 }
 
 fn is_diff_metadata(line: &str) -> bool {
-    line.starts_with("index ")
-        || line.starts_with("+++ ")
-        || line.starts_with('\\')
+    line.starts_with("index ") || line.starts_with("+++ ") || line.starts_with('\\')
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -325,18 +329,19 @@ fn effective_keywords(cfg: &Config) -> Vec<String> {
 
 fn enforce_quota(cfg: &Config) -> Result<Option<String>> {
     let use_cfg = cfg.usage.as_ref();
-    let total   = use_cfg.map(|u| u.monthly_limit()).unwrap_or(200);
-    let cmd     = use_cfg.map(|u| u.git_limit()).unwrap_or(60);
-    let warn    = use_cfg.map(|u| u.warn_at_percent()).unwrap_or(80);
+    let total = use_cfg.map(|u| u.monthly_limit()).unwrap_or(200);
+    let cmd = use_cfg.map(|u| u.git_limit()).unwrap_or(60);
+    let warn = use_cfg.map(|u| u.warn_at_percent()).unwrap_or(80);
     UsageTracker::open()?.check_and_record("git", cmd, total, warn)
 }
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("git");
+    let ctx = memory::context_for_prompt("git");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let result   = llm::client_for(&provider, &api_key)
-        .complete(&format!("{ctx}{system}"), user).await?;
+    let api_key = creds::load(&provider)?;
+    let result = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user)
+        .await?;
     memory::record_interaction("git", &result);
     Ok(result)
 }
@@ -383,7 +388,9 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
 
-    fn tmp() -> TempDir { tempfile::tempdir().unwrap() }
+    fn tmp() -> TempDir {
+        tempfile::tempdir().unwrap()
+    }
 
     // --- parse_diff_filename ---
 
@@ -410,7 +417,10 @@ mod tests {
 
     #[test]
     fn hunk_start_extracts_new_file_line() {
-        assert_eq!(parse_hunk_start("@@ -1,5 +10,8 @@ fn main() {").unwrap(), 10);
+        assert_eq!(
+            parse_hunk_start("@@ -1,5 +10,8 @@ fn main() {").unwrap(),
+            10
+        );
     }
 
     #[test]
@@ -434,7 +444,7 @@ mod tests {
     #[test]
     fn added_line_detection() {
         assert!(is_added_line("+new line"));
-        assert!(!is_added_line("+++ b/file"));  // file header excluded
+        assert!(!is_added_line("+++ b/file")); // file header excluded
         assert!(!is_added_line("-removed"));
         assert!(!is_added_line(" context"));
     }
@@ -466,7 +476,7 @@ index abc..def 100644
     #[test]
     fn detects_keyword_in_added_line() {
         let kws = vec!["console.log".to_string()];
-        let vs  = find_violations(SAMPLE_DIFF, &kws);
+        let vs = find_violations(SAMPLE_DIFF, &kws);
         assert_eq!(vs.len(), 1);
         assert_eq!(vs[0].file, "src/lib.rs");
         assert_eq!(vs[0].keyword, "console.log");
@@ -533,7 +543,7 @@ index c..d 100644
 +console.log(2)
 ";
         let kws = vec!["console.log".to_string()];
-        let vs  = find_violations(diff, &kws);
+        let vs = find_violations(diff, &kws);
         assert_eq!(vs.len(), 2);
         assert_eq!(vs[0].file, "a.js");
         assert_eq!(vs[1].file, "b.js");
@@ -548,7 +558,7 @@ index c..d 100644
 
     #[test]
     fn long_string_is_truncated_with_note() {
-        let s   = "a".repeat(200);
+        let s = "a".repeat(200);
         let out = truncate(&s, 100);
         assert!(out.len() > 100);
         assert!(out.contains("truncated"));
@@ -570,7 +580,7 @@ index c..d 100644
         use crate::config::GitConfig;
         let cfg = Config {
             git: Some(GitConfig {
-                commit_style:      None,
+                commit_style: None,
                 block_on_keywords: Some(vec!["MY_DEBUG".to_string()]),
             }),
             ..Default::default()
@@ -583,7 +593,7 @@ index c..d 100644
 
     #[test]
     fn hook_file_is_written_correctly() {
-        let d    = tmp();
+        let d = tmp();
         let path = d.path().join("pre-commit");
         install_hook(&path).unwrap();
         let content = fs::read_to_string(&path).unwrap();
@@ -593,7 +603,7 @@ index c..d 100644
 
     #[test]
     fn refuses_to_overwrite_existing_hook() {
-        let d    = tmp();
+        let d = tmp();
         let path = d.path().join("pre-commit");
         fs::write(&path, "existing hook").unwrap();
         assert!(install_hook(&path).is_err());

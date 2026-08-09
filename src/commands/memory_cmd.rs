@@ -44,7 +44,8 @@ pub fn run(action: MemoryAction) -> Result<()> {
 
         MemoryAction::Note { text, command } => {
             memory::add_note(&text, command.as_deref())?;
-            let scope = command.as_deref()
+            let scope = command
+                .as_deref()
                 .map(|c| format!(" (scoped to `{c}`)"))
                 .unwrap_or_default();
             println!("✓  Note saved{scope}. Will be injected into future LLM calls.");
@@ -53,7 +54,8 @@ pub fn run(action: MemoryAction) -> Result<()> {
 
         MemoryAction::Feedback { text, command } => {
             memory::add_feedback(&text, command.as_deref())?;
-            let scope = command.as_deref()
+            let scope = command
+                .as_deref()
                 .map(|c| format!(" (tagged to `{c}`)"))
                 .unwrap_or_default();
             println!("✓  Feedback saved{scope}.");

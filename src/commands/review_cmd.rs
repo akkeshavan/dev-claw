@@ -37,7 +37,7 @@ pub enum ReviewAction {
 pub async fn run(action: ReviewAction) -> Result<()> {
     match action {
         ReviewAction::Diff { staged, focus } => review_diff(staged, &focus).await,
-        ReviewAction::Pr { number, focus }   => review_pr(number, &focus).await,
+        ReviewAction::Pr { number, focus } => review_pr(number, &focus).await,
     }
 }
 
@@ -45,9 +45,9 @@ pub async fn run(action: ReviewAction) -> Result<()> {
 
 async fn review_diff(staged: bool, focus: &str) -> Result<()> {
     validate_focus(focus)?;
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
-    let diff  = diff_content(staged)?;
+    let diff = diff_content(staged)?;
     let label = if staged { "staged" } else { "uncommitted" };
     println!("Reviewing {label} changes ({} chars)…\n", diff.len());
     let review = call_llm(&build_system_prompt(focus), &build_user_prompt(&diff)).await?;
@@ -59,9 +59,9 @@ async fn review_diff(staged: bool, focus: &str) -> Result<()> {
 
 async fn review_pr(number: u32, focus: &str) -> Result<()> {
     validate_focus(focus)?;
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
-    let diff  = pr_diff(number)?;
+    let diff = pr_diff(number)?;
     println!("Reviewing PR #{number} ({} chars)…\n", diff.len());
     let review = call_llm(&build_system_prompt(focus), &build_user_prompt(&diff)).await?;
     println!("{review}");
@@ -92,9 +92,9 @@ fn pr_diff(number: u32) -> Result<String> {
     let out = Command::new("gh")
         .args(["pr", "diff", &number.to_string()])
         .output()
-        .map_err(|e| anyhow::anyhow!(
-            "gh CLI not found: {e}. Install from https://cli.github.com"
-        ))?;
+        .map_err(|e| {
+            anyhow::anyhow!("gh CLI not found: {e}. Install from https://cli.github.com")
+        })?;
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         bail!("gh pr diff failed: {stderr}");
@@ -159,17 +159,21 @@ fn validate_focus(focus: &str) -> Result<()> {
     if VALID_FOCUS.contains(&focus) {
         return Ok(());
     }
-    bail!("Unknown focus `{focus}`. Valid options: {}", VALID_FOCUS.join(", "))
+    bail!(
+        "Unknown focus `{focus}`. Valid options: {}",
+        VALID_FOCUS.join(", ")
+    )
 }
 
 // ── LLM helpers ───────────────────────────────────────────────────────────────
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("review");
+    let ctx = memory::context_for_prompt("review");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let result   = llm::client_for(&provider, &api_key)
-        .complete(&format!("{ctx}{system}"), user).await?;
+    let api_key = creds::load(&provider)?;
+    let result = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user)
+        .await?;
     memory::record_interaction("review", &result);
     Ok(result)
 }
@@ -178,16 +182,18 @@ fn resolve_provider() -> Result<String> {
     if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
         return Ok(p);
     }
-    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
-        "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-    ))
+    creds::auto_detect_provider().ok_or_else(|| {
+        anyhow::anyhow!(
+            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
+        )
+    })
 }
 
 // ── Quota enforcement ─────────────────────────────────────────────────────────
 
 fn enforce_quota(cfg: &Config) -> Result<()> {
     let tracker = UsageTracker::open()?;
-    let limits  = cfg.usage.as_ref();
+    let limits = cfg.usage.as_ref();
     let monthly = limits.map(|l| l.monthly_limit()).unwrap_or(200);
     let warn_at = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
     if let Some(w) = tracker.check_and_record("review", monthly, monthly, warn_at)? {
@@ -248,10 +254,10 @@ mod tests {
     fn system_prompt_always_includes_severity_labels() {
         for focus in VALID_FOCUS {
             let p = build_system_prompt(focus);
-            assert!(p.contains("Critical"),   "{focus}: missing Critical");
-            assert!(p.contains("Major"),      "{focus}: missing Major");
-            assert!(p.contains("Minor"),      "{focus}: missing Minor");
-            assert!(p.contains("Positives"),  "{focus}: missing Positives");
+            assert!(p.contains("Critical"), "{focus}: missing Critical");
+            assert!(p.contains("Major"), "{focus}: missing Major");
+            assert!(p.contains("Minor"), "{focus}: missing Minor");
+            assert!(p.contains("Positives"), "{focus}: missing Positives");
         }
     }
 

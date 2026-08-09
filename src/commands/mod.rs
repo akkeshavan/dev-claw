@@ -1,12 +1,12 @@
 pub mod cloud_cmd;
 pub mod config_cmd;
-pub mod memory_cmd;
 pub mod deps_cmd;
 pub mod doctor;
 pub mod env_cmd;
 pub mod forensic_cmd;
 pub mod git_cmd;
 pub mod init;
+pub mod memory_cmd;
 pub mod mock_cmd;
 pub mod release_cmd;
 pub mod review_cmd;

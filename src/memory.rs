@@ -24,24 +24,24 @@ const GLOBAL_SCHEMA: &str = "
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct UserNote {
-    pub text:       String,
-    pub command:    Option<String>,
+    pub text: String,
+    pub command: Option<String>,
     pub created_at: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Interaction {
-    pub command:          String,
+    pub command: String,
     pub response_preview: String,
-    pub recorded_at:      String,
+    pub recorded_at: String,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct ProjectMemory {
-    pub project_id:   String,
+    pub project_id: String,
     pub project_name: String,
-    pub stack:        Vec<String>,
-    pub user_notes:   Vec<UserNote>,
+    pub stack: Vec<String>,
+    pub user_notes: Vec<UserNote>,
     pub interactions: Vec<Interaction>,
 }
 
@@ -51,9 +51,9 @@ impl ProjectMemory {
         if !path.exists() {
             let root = project_root();
             return Ok(Self {
-                project_id:   project_id(&root),
+                project_id: project_id(&root),
                 project_name: project_name(&root),
-                stack:        detect_stack(&root),
+                stack: detect_stack(&root),
                 ..Default::default()
             });
         }
@@ -77,17 +77,17 @@ impl ProjectMemory {
 
     fn push_note(&mut self, text: &str, command: Option<&str>) {
         self.user_notes.push(UserNote {
-            text:       text.to_string(),
-            command:    command.map(str::to_string),
+            text: text.to_string(),
+            command: command.map(str::to_string),
             created_at: now(),
         });
     }
 
     fn push_interaction(&mut self, command: &str, preview: &str) {
         self.interactions.push(Interaction {
-            command:          command.to_string(),
+            command: command.to_string(),
             response_preview: preview.chars().take(200).collect(),
-            recorded_at:      now(),
+            recorded_at: now(),
         });
         if self.interactions.len() > MAX_INTERACTIONS {
             self.interactions.remove(0);
@@ -97,18 +97,20 @@ impl ProjectMemory {
 
 // ── Global SQLite store ───────────────────────────────────────────────────────
 
-struct GlobalDb { conn: Connection }
+struct GlobalDb {
+    conn: Connection,
+}
 
 struct NoteRow {
-    kind:       String,
-    command:    Option<String>,
-    text:       String,
+    kind: String,
+    command: Option<String>,
+    text: String,
     created_at: String,
 }
 
 impl GlobalDb {
     fn open() -> Result<Self> {
-        let db   = Config::data_dir()?.join("usage.db");
+        let db = Config::data_dir()?.join("usage.db");
         let conn = Connection::open(db)?;
         conn.execute_batch(GLOBAL_SCHEMA)?;
         Ok(Self { conn })
@@ -130,9 +132,9 @@ impl GlobalDb {
         )?;
         let rows = stmt.query_map(params![pid], |r| {
             Ok(NoteRow {
-                kind:       r.get(0)?,
-                command:    r.get(1)?,
-                text:       r.get(2)?,
+                kind: r.get(0)?,
+                command: r.get(1)?,
+                text: r.get(2)?,
                 created_at: r.get(3)?,
             })
         })?;
@@ -140,7 +142,8 @@ impl GlobalDb {
     }
 
     fn delete_project(&self, pid: &str) -> Result<()> {
-        self.conn.execute("DELETE FROM memory_notes WHERE project_id=?1", params![pid])?;
+        self.conn
+            .execute("DELETE FROM memory_notes WHERE project_id=?1", params![pid])?;
         Ok(())
     }
 
@@ -155,20 +158,26 @@ impl GlobalDb {
 /// Compact context block to prepend to LLM system prompts.
 /// Returns empty string on any error so callers never fail because of memory.
 pub fn context_for_prompt(command: &str) -> String {
-    let Ok(mem) = ProjectMemory::load() else { return String::new(); };
+    let Ok(mem) = ProjectMemory::load() else {
+        return String::new();
+    };
     let mut lines: Vec<String> = Vec::new();
 
     if !mem.stack.is_empty() {
         lines.push(format!("Stack: {}", mem.stack.join(", ")));
     }
-    let notes: Vec<&str> = mem.user_notes.iter()
+    let notes: Vec<&str> = mem
+        .user_notes
+        .iter()
         .filter(|n| n.command.is_none() || n.command.as_deref() == Some(command))
         .map(|n| n.text.as_str())
         .collect();
     if !notes.is_empty() {
         lines.push(format!("Project context: {}", notes.join("; ")));
     }
-    if lines.is_empty() { return String::new(); }
+    if lines.is_empty() {
+        return String::new();
+    }
 
     let block = format!("[Project memory]\n{}\n\n", lines.join("\n"));
     if block.chars().count() > MAX_CONTEXT_CHARS {
@@ -207,9 +216,11 @@ pub fn clear_project() -> Result<()> {
     // Compute root once — memory_dir() also calls project_root(), so using it
     // directly avoids a TOCTOU inconsistency if cwd shifts between the two calls.
     let root = project_root();
-    let pid  = project_id(&root);
+    let pid = project_id(&root);
     let path = root.join(".dev-claw").join("memory.toml");
-    if path.exists() { std::fs::remove_file(&path)?; }
+    if path.exists() {
+        std::fs::remove_file(&path)?;
+    }
     GlobalDb::open()?.delete_project(&pid)
 }
 
@@ -240,7 +251,9 @@ pub fn show() -> Result<()> {
     } else {
         println!("\nNotes ({}):", mem.user_notes.len());
         for n in &mem.user_notes {
-            let tag = n.command.as_deref()
+            let tag = n
+                .command
+                .as_deref()
                 .map(|c| format!("  [cmd: {c}]"))
                 .unwrap_or_default();
             println!("  • {}{}", n.text, tag);
@@ -251,7 +264,9 @@ pub fn show() -> Result<()> {
         let last = mem.interactions.last().unwrap();
         println!(
             "\nInteractions recorded: {}  (last: {} at {})",
-            mem.interactions.len(), last.command, last.recorded_at
+            mem.interactions.len(),
+            last.command,
+            last.recorded_at
         );
     }
 
@@ -259,7 +274,9 @@ pub fn show() -> Result<()> {
     if !rows.is_empty() {
         println!("\nGlobal history ({} entries):", rows.len());
         for row in rows.iter().take(5) {
-            let tag = row.command.as_deref()
+            let tag = row
+                .command
+                .as_deref()
                 .map(|c| format!("[{c}] "))
                 .unwrap_or_default();
             println!("  [{}] {}{}", row.kind, tag, row.text);
@@ -318,9 +335,15 @@ fn now() -> String {
 
 fn detect_stack(root: &std::path::Path) -> Vec<String> {
     let mut s = Vec::new();
-    if root.join("Cargo.toml").exists()    { s.push("rust".into()); }
-    if root.join("package.json").exists()  { s.push("node".into()); }
-    if root.join("go.mod").exists()        { s.push("go".into()); }
+    if root.join("Cargo.toml").exists() {
+        s.push("rust".into());
+    }
+    if root.join("package.json").exists() {
+        s.push("node".into());
+    }
+    if root.join("go.mod").exists() {
+        s.push("go".into());
+    }
     if root.join("pyproject.toml").exists() || root.join("requirements.txt").exists() {
         s.push("python".into());
     }
@@ -329,15 +352,22 @@ fn detect_stack(root: &std::path::Path) -> Vec<String> {
 
 fn ensure_gitignored() {
     let root = project_root();
-    let gi   = root.join(".gitignore");
+    let gi = root.join(".gitignore");
     // Use empty string if .gitignore doesn't exist — we'll create it below.
     // Previously returned early on missing file, which left .dev-claw/ unignored.
     let content = std::fs::read_to_string(&gi).unwrap_or_default();
-    if content.lines().any(|l| l.trim() == ".dev-claw" || l.trim() == ".dev-claw/") {
+    if content
+        .lines()
+        .any(|l| l.trim() == ".dev-claw" || l.trim() == ".dev-claw/")
+    {
         return;
     }
-    let sep = if content.ends_with('\n') || content.is_empty() { "" } else { "\n" };
-    let _   = std::fs::write(&gi, format!("{content}{sep}.dev-claw/\n"));
+    let sep = if content.ends_with('\n') || content.is_empty() {
+        ""
+    } else {
+        "\n"
+    };
+    let _ = std::fs::write(&gi, format!("{content}{sep}.dev-claw/\n"));
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -348,14 +378,17 @@ mod tests {
 
     fn make_mem(stack: &[&str], notes: &[(&str, Option<&str>)]) -> ProjectMemory {
         ProjectMemory {
-            project_id:   "test-id".into(),
+            project_id: "test-id".into(),
             project_name: "test-project".into(),
-            stack:        stack.iter().map(|s| s.to_string()).collect(),
-            user_notes:   notes.iter().map(|(t, c)| UserNote {
-                text:       t.to_string(),
-                command:    c.map(str::to_string),
-                created_at: "2024-01-01 10:00".into(),
-            }).collect(),
+            stack: stack.iter().map(|s| s.to_string()).collect(),
+            user_notes: notes
+                .iter()
+                .map(|(t, c)| UserNote {
+                    text: t.to_string(),
+                    command: c.map(str::to_string),
+                    created_at: "2024-01-01 10:00".into(),
+                })
+                .collect(),
             interactions: Vec::new(),
         }
     }
@@ -383,12 +416,17 @@ mod tests {
 
     #[test]
     fn context_filters_notes_by_command() {
-        let mem = make_mem(&[], &[
-            ("global note", None),
-            ("standup note", Some("standup")),
-            ("git note", Some("git")),
-        ]);
-        let standup_notes: Vec<&str> = mem.user_notes.iter()
+        let mem = make_mem(
+            &[],
+            &[
+                ("global note", None),
+                ("standup note", Some("standup")),
+                ("git note", Some("git")),
+            ],
+        );
+        let standup_notes: Vec<&str> = mem
+            .user_notes
+            .iter()
             .filter(|n| n.command.is_none() || n.command.as_deref() == Some("standup"))
             .map(|n| n.text.as_str())
             .collect();
@@ -400,18 +438,27 @@ mod tests {
 
     #[test]
     fn push_interaction_caps_at_max() {
-        let mut mem = ProjectMemory { ..Default::default() };
+        let mut mem = ProjectMemory {
+            ..Default::default()
+        };
         for i in 0..MAX_INTERACTIONS + 10 {
             mem.push_interaction("git", &format!("response {i}"));
         }
         assert_eq!(mem.interactions.len(), MAX_INTERACTIONS);
         // Oldest are evicted — last entry is the most recent
-        assert!(mem.interactions.last().unwrap().response_preview.contains("59"));
+        assert!(mem
+            .interactions
+            .last()
+            .unwrap()
+            .response_preview
+            .contains("59"));
     }
 
     #[test]
     fn push_interaction_preview_capped_at_200_chars() {
-        let mut mem = ProjectMemory { ..Default::default() };
+        let mut mem = ProjectMemory {
+            ..Default::default()
+        };
         let long = "x".repeat(500);
         mem.push_interaction("review", &long);
         assert_eq!(mem.interactions[0].response_preview.len(), 200);
@@ -446,7 +493,10 @@ mod tests {
 
     #[test]
     fn project_name_extracts_dir_name() {
-        assert_eq!(project_name(std::path::Path::new("/home/user/my-app")), "my-app");
+        assert_eq!(
+            project_name(std::path::Path::new("/home/user/my-app")),
+            "my-app"
+        );
     }
 
     #[test]

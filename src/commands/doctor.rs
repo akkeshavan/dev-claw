@@ -29,11 +29,11 @@ Rules:
 - No greetings. No "I hope this helps." Just the diagnosis."#;
 
 pub async fn run() -> Result<()> {
-    let raw     = read_stdin()?;
-    let cfg     = Config::load()?;
+    let raw = read_stdin()?;
+    let cfg = Config::load()?;
     let cleaned = apply_doctor_config(&raw, cfg.doctor.as_ref());
     let warning = enforce_quota(cfg.usage.as_ref())?;
-    let answer  = call_llm(&cleaned).await?;
+    let answer = call_llm(&cleaned).await?;
 
     println!("\n{}\n", answer.trim());
     if let Some(w) = warning {
@@ -74,17 +74,19 @@ fn apply_doctor_config(raw: &str, cfg: Option<&DoctorConfig>) -> String {
 
 fn enforce_quota(cfg: Option<&UsageLimits>) -> Result<Option<String>> {
     let total_limit = cfg.map(|u| u.monthly_limit()).unwrap_or(200);
-    let cmd_limit   = cfg.map(|u| u.doctor_limit()).unwrap_or(75);
-    let warn_pct    = cfg.map(|u| u.warn_at_percent()).unwrap_or(80);
+    let cmd_limit = cfg.map(|u| u.doctor_limit()).unwrap_or(75);
+    let warn_pct = cfg.map(|u| u.warn_at_percent()).unwrap_or(80);
     UsageTracker::open()?.check_and_record("doctor", cmd_limit, total_limit, warn_pct)
 }
 
 async fn call_llm(cleaned: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("doctor");
-    let system   = format!("{ctx}{SYSTEM_PROMPT}");
+    let ctx = memory::context_for_prompt("doctor");
+    let system = format!("{ctx}{SYSTEM_PROMPT}");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let result   = llm::client_for(&provider, &api_key).complete(&system, cleaned).await?;
+    let api_key = creds::load(&provider)?;
+    let result = llm::client_for(&provider, &api_key)
+        .complete(&system, cleaned)
+        .await?;
     memory::record_interaction("doctor", &result);
     Ok(result)
 }
@@ -106,7 +108,7 @@ fn resolve_provider() -> Result<String> {
 /// Errors surface at the tail of build output, so we drop the head.
 fn preprocess(raw: &str, max_lines: usize, ignore: &[String]) -> String {
     let stripped = strip_ansi_escapes::strip(raw.as_bytes());
-    let text     = String::from_utf8_lossy(&stripped);
+    let text = String::from_utf8_lossy(&stripped);
 
     let lines: Vec<&str> = text
         .lines()
@@ -125,16 +127,16 @@ mod tests {
     #[test]
     fn strips_ansi_escape_codes() {
         let input = "\x1b[31mError\x1b[0m: something failed";
-        let out   = preprocess(input, 100, &[]);
+        let out = preprocess(input, 100, &[]);
         assert!(!out.contains('\x1b'));
         assert!(out.contains("Error: something failed"));
     }
 
     #[test]
     fn filters_ignore_patterns() {
-        let input    = "node_modules/foo/bar.js: noise\nactual error here";
+        let input = "node_modules/foo/bar.js: noise\nactual error here";
         let patterns = vec!["node_modules".to_string()];
-        let out      = preprocess(input, 100, &patterns);
+        let out = preprocess(input, 100, &patterns);
         assert!(!out.contains("node_modules"));
         assert!(out.contains("actual error here"));
     }
@@ -142,7 +144,7 @@ mod tests {
     #[test]
     fn takes_tail_not_head() {
         let input: String = (1..=200).map(|i| format!("line {i}\n")).collect();
-        let out   = preprocess(&input, 10, &[]);
+        let out = preprocess(&input, 10, &[]);
         assert!(out.contains("line 200"));
         assert!(!out.contains("line 1\n"));
         assert_eq!(out.lines().count(), 10);
@@ -151,7 +153,7 @@ mod tests {
     #[test]
     fn removes_blank_lines() {
         let input = "error A\n\n\nerror B\n";
-        let out   = preprocess(input, 100, &[]);
+        let out = preprocess(input, 100, &[]);
         assert!(!out.contains("\n\n"));
         assert_eq!(out.lines().count(), 2);
     }
@@ -159,8 +161,8 @@ mod tests {
     #[test]
     fn multiple_patterns_all_filtered() {
         let input = "node_modules/x.js:1: bad\n.next/chunk.js:2: bad\nreal error";
-        let pats  = vec!["node_modules".to_string(), ".next".to_string()];
-        let out   = preprocess(input, 100, &pats);
+        let pats = vec!["node_modules".to_string(), ".next".to_string()];
+        let out = preprocess(input, 100, &pats);
         assert_eq!(out.lines().count(), 1);
         assert!(out.contains("real error"));
     }

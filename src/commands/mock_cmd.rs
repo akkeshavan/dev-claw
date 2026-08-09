@@ -34,18 +34,19 @@ pub enum MockAction {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_SCHEMA_CHARS: usize = 8_000;
-const VALID_FORMATS: &[&str]  = &["json", "ts", "sql", "csv"];
+const VALID_FORMATS: &[&str] = &["json", "ts", "sql", "csv"];
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
 pub async fn run(action: MockAction) -> Result<()> {
     match action {
-        MockAction::Gen { schema, count, format, out } => {
-            gen(&schema, count, &format, out.as_deref()).await
-        }
-        MockAction::Factory { types_file, out } => {
-            factory(&types_file, out.as_deref()).await
-        }
+        MockAction::Gen {
+            schema,
+            count,
+            format,
+            out,
+        } => gen(&schema, count, &format, out.as_deref()).await,
+        MockAction::Factory { types_file, out } => factory(&types_file, out.as_deref()).await,
     }
 }
 
@@ -53,34 +54,34 @@ pub async fn run(action: MockAction) -> Result<()> {
 
 async fn gen(schema_file: &str, count: u32, format: &str, out: Option<&str>) -> Result<()> {
     validate_format(format)?;
-    let cfg    = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
     let schema = read_schema(schema_file)?;
     let system = gen_system_prompt(format);
     let prompt = build_gen_prompt(&schema, count, format);
     println!("Generating {count} {format} fixture(s) from {schema_file}...\n");
-    let raw    = call_llm(&system, &prompt).await?;
+    let raw = call_llm(&system, &prompt).await?;
     write_output(&extract_code_block(&raw), out)
 }
 
 // ── Factory subcommand ────────────────────────────────────────────────────────
 
 async fn factory(types_file: &str, out: Option<&str>) -> Result<()> {
-    let cfg    = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
-    let types  = read_schema(types_file)?;
+    let types = read_schema(types_file)?;
     let system = factory_system_prompt();
     let prompt = build_factory_prompt(&types);
     println!("Generating TypeScript factories from {types_file}...\n");
-    let raw    = call_llm(system, &prompt).await?;
+    let raw = call_llm(system, &prompt).await?;
     write_output(&extract_code_block(&raw), out)
 }
 
 // ── I/O helpers ───────────────────────────────────────────────────────────────
 
 fn read_schema(path: &str) -> Result<String> {
-    let raw = std::fs::read_to_string(path)
-        .map_err(|e| anyhow::anyhow!("Cannot read {path}: {e}"))?;
+    let raw =
+        std::fs::read_to_string(path).map_err(|e| anyhow::anyhow!("Cannot read {path}: {e}"))?;
     if raw.trim().is_empty() {
         bail!("{path} is empty");
     }
@@ -93,18 +94,21 @@ fn write_output(content: &str, out: Option<&str>) -> Result<()> {
         return Ok(());
     };
     let abs = utils::safe_output_path(path)?;
-    if abs.exists() && !utils::confirm(&format!("File `{path}` already exists — overwrite? [y/N] "))? {
+    if abs.exists()
+        && !utils::confirm(&format!("File `{path}` already exists — overwrite? [y/N] "))?
+    {
         println!("Aborted.");
         return Ok(());
     }
-    std::fs::write(&abs, content)
-        .map_err(|e| anyhow::anyhow!("Cannot write {path}: {e}"))?;
+    std::fs::write(&abs, content).map_err(|e| anyhow::anyhow!("Cannot write {path}: {e}"))?;
     println!("Written to {path}");
     Ok(())
 }
 
 fn truncate_schema(s: &str) -> String {
-    if s.chars().count() <= MAX_SCHEMA_CHARS { return s.to_string(); }
+    if s.chars().count() <= MAX_SCHEMA_CHARS {
+        return s.to_string();
+    }
     let trimmed: String = s.chars().take(MAX_SCHEMA_CHARS).collect();
     format!("{trimmed}\n-- [schema truncated at {MAX_SCHEMA_CHARS} chars]")
 }
@@ -112,8 +116,13 @@ fn truncate_schema(s: &str) -> String {
 // ── Format validation ─────────────────────────────────────────────────────────
 
 fn validate_format(fmt: &str) -> Result<()> {
-    if VALID_FORMATS.contains(&fmt) { return Ok(()); }
-    bail!("Unknown format `{fmt}`. Valid options: {}", VALID_FORMATS.join(", "))
+    if VALID_FORMATS.contains(&fmt) {
+        return Ok(());
+    }
+    bail!(
+        "Unknown format `{fmt}`. Valid options: {}",
+        VALID_FORMATS.join(", ")
+    )
 }
 
 // ── Prompt builders ───────────────────────────────────────────────────────────
@@ -158,10 +167,12 @@ fn build_factory_prompt(types: &str) -> String {
 
 fn extract_code_block(response: &str) -> String {
     let trimmed = response.trim();
-    let Some(fence_start) = trimmed.find("```") else { return trimmed.to_string(); };
-    let after_fence   = &trimmed[fence_start + 3..];
+    let Some(fence_start) = trimmed.find("```") else {
+        return trimmed.to_string();
+    };
+    let after_fence = &trimmed[fence_start + 3..];
     let content_start = after_fence.find('\n').map(|i| i + 1).unwrap_or(0);
-    let content       = &after_fence[content_start..];
+    let content = &after_fence[content_start..];
     if let Some(fence_end) = content.rfind("```") {
         return content[..fence_end].trim().to_string();
     }
@@ -171,30 +182,35 @@ fn extract_code_block(response: &str) -> String {
 // ── LLM helpers ───────────────────────────────────────────────────────────────
 
 async fn call_llm(system: &str, user: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("mock");
+    let ctx = memory::context_for_prompt("mock");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let result   = llm::client_for(&provider, &api_key)
-        .complete(&format!("{ctx}{system}"), user).await?;
+    let api_key = creds::load(&provider)?;
+    let result = llm::client_for(&provider, &api_key)
+        .complete(&format!("{ctx}{system}"), user)
+        .await?;
     memory::record_interaction("mock", &result);
     Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
-        "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-    ))
+    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
+        return Ok(p);
+    }
+    creds::auto_detect_provider().ok_or_else(|| {
+        anyhow::anyhow!(
+            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
+        )
+    })
 }
 
 // ── Quota enforcement ─────────────────────────────────────────────────────────
 
 fn enforce_quota(cfg: &Config) -> Result<()> {
-    let tracker   = UsageTracker::open()?;
-    let limits    = cfg.usage.as_ref();
-    let monthly   = limits.map(|l| l.monthly_limit()).unwrap_or(200);
+    let tracker = UsageTracker::open()?;
+    let limits = cfg.usage.as_ref();
+    let monthly = limits.map(|l| l.monthly_limit()).unwrap_or(200);
     let cmd_limit = limits.map(|l| l.mock_limit()).unwrap_or(30);
-    let warn_at   = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
+    let warn_at = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
     if let Some(w) = tracker.check_and_record("mock", cmd_limit, monthly, warn_at)? {
         eprintln!("{w}");
     }

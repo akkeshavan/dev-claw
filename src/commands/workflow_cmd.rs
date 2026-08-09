@@ -39,10 +39,10 @@ const MAX_WORKFLOW_STEPS: usize = 50;
 
 pub async fn run(action: WorkflowAction) -> Result<()> {
     match action {
-        WorkflowAction::Ls                    => list_workflows(),
+        WorkflowAction::Ls => list_workflows(),
         WorkflowAction::Run { name, dry_run } => run_workflow(&name, dry_run),
-        WorkflowAction::Publish { name }      => publish_workflow(&name),
-        WorkflowAction::Import { url }        => import_workflow(&url),
+        WorkflowAction::Publish { name } => publish_workflow(&name),
+        WorkflowAction::Import { url } => import_workflow(&url),
     }
 }
 
@@ -50,7 +50,7 @@ pub async fn run(action: WorkflowAction) -> Result<()> {
 
 fn list_workflows() -> Result<()> {
     let project = load_project_workflows()?;
-    let global  = load_global_workflows()?;
+    let global = load_global_workflows()?;
     if project.is_empty() && global.is_empty() {
         println!("No workflows defined.\n");
         println!("Add to .devclawrc:\n");
@@ -69,13 +69,19 @@ fn list_workflows() -> Result<()> {
 
 fn run_workflow(name: &str, dry_run: bool) -> Result<()> {
     let all = load_all_workflows()?;
-    let wf  = find_workflow(&all, name)
-        .ok_or_else(|| anyhow::anyhow!(
-            "No workflow named '{name}'. Run `dev-claw workflow ls` to list workflows."
-        ))?
+    let wf = find_workflow(&all, name)
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "No workflow named '{name}'. Run `dev-claw workflow ls` to list workflows."
+            )
+        })?
         .clone();
     let label = if dry_run { " [dry-run]" } else { "" };
-    println!("Running workflow: {}{label} ({} steps)\n", wf.name, wf.steps.len());
+    println!(
+        "Running workflow: {}{label} ({} steps)\n",
+        wf.name,
+        wf.steps.len()
+    );
     for (i, step) in wf.steps.iter().enumerate() {
         println!("── Step {}/{}: dev-claw {step}", i + 1, wf.steps.len());
         if dry_run {
@@ -97,29 +103,43 @@ fn run_workflow(name: &str, dry_run: bool) -> Result<()> {
 
 fn publish_workflow(name: &str) -> Result<()> {
     let all = load_all_workflows()?;
-    let wf  = find_workflow(&all, name)
+    let wf = find_workflow(&all, name)
         .ok_or_else(|| anyhow::anyhow!("No workflow named '{name}'"))?
         .clone();
-    let toml     = serialize_workflows(&[wf]);
-    let desc     = format!("dev-claw workflow: {name}");
+    let toml = serialize_workflows(&[wf]);
+    let desc = format!("dev-claw workflow: {name}");
     let filename = format!("{name}.toml");
     let mut child = Command::new("gh")
-        .args(["gist", "create", "--public", "--desc", &desc, "--filename", &filename, "-"])
+        .args([
+            "gist",
+            "create",
+            "--public",
+            "--desc",
+            &desc,
+            "--filename",
+            &filename,
+            "-",
+        ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| anyhow::anyhow!(
-            "gh CLI not found: {e}. Install from https://cli.github.com"
-        ))?;
+        .map_err(|e| {
+            anyhow::anyhow!("gh CLI not found: {e}. Install from https://cli.github.com")
+        })?;
     if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(toml.as_bytes())
+        stdin
+            .write_all(toml.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write to gh stdin: {e}"))?;
     }
-    let out = child.wait_with_output()
+    let out = child
+        .wait_with_output()
         .map_err(|e| anyhow::anyhow!("gh process error: {e}"))?;
     if !out.status.success() {
-        bail!("gh gist create failed: {}", String::from_utf8_lossy(&out.stderr));
+        bail!(
+            "gh gist create failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
     let gist_url = String::from_utf8_lossy(&out.stdout).trim().to_string();
     println!("Published! Share this workflow with:");
@@ -130,7 +150,7 @@ fn publish_workflow(name: &str) -> Result<()> {
 // ── Import ────────────────────────────────────────────────────────────────────
 
 fn import_workflow(url: &str) -> Result<()> {
-    let content  = fetch_workflow_content(url)?;
+    let content = fetch_workflow_content(url)?;
     let incoming = parse_workflow_toml(&content)?;
     if incoming.is_empty() {
         bail!("No [[workflows]] found at {url}");
@@ -139,7 +159,8 @@ fn import_workflow(url: &str) -> Result<()> {
         if def.steps.len() > MAX_WORKFLOW_STEPS {
             bail!(
                 "Workflow '{}' has {} steps (max {MAX_WORKFLOW_STEPS}) — refusing to import.",
-                def.name, def.steps.len()
+                def.name,
+                def.steps.len()
             );
         }
     }
@@ -147,7 +168,10 @@ fn import_workflow(url: &str) -> Result<()> {
     let mut added = 0usize;
     for def in incoming {
         if existing.iter().any(|w| w.name == def.name) {
-            println!("Skipping '{}' (already exists in global workflows)", def.name);
+            println!(
+                "Skipping '{}' (already exists in global workflows)",
+                def.name
+            );
             continue;
         }
         println!("Importing: {}", def.name);
@@ -162,7 +186,7 @@ fn import_workflow(url: &str) -> Result<()> {
 // ── Step execution ────────────────────────────────────────────────────────────
 
 pub fn execute_step(step: &str) -> Result<bool> {
-    let exe  = std::env::current_exe()
+    let exe = std::env::current_exe()
         .map_err(|e| anyhow::anyhow!("Cannot locate dev-claw binary: {e}"))?;
     let args = shlex::split(step)
         .ok_or_else(|| anyhow::anyhow!("Invalid step syntax (unmatched quote?): {step}"))?;
@@ -181,7 +205,9 @@ fn load_project_workflows() -> Result<Vec<WorkflowDef>> {
 
 pub fn load_global_workflows() -> Result<Vec<WorkflowDef>> {
     let path = global_workflows_path()?;
-    if !path.exists() { return Ok(vec![]); }
+    if !path.exists() {
+        return Ok(vec![]);
+    }
     let raw = std::fs::read_to_string(&path)
         .map_err(|e| anyhow::anyhow!("Cannot read {}: {e}", path.display()))?;
     parse_workflow_toml(&raw)
@@ -223,9 +249,11 @@ pub fn serialize_workflows(workflows: &[WorkflowDef]) -> String {
 
 pub fn parse_workflow_toml(content: &str) -> Result<Vec<WorkflowDef>> {
     #[derive(serde::Deserialize)]
-    struct WorkflowFile { workflows: Option<Vec<WorkflowDef>> }
-    let parsed: WorkflowFile = toml::from_str(content)
-        .map_err(|e| anyhow::anyhow!("Invalid workflow TOML: {e}"))?;
+    struct WorkflowFile {
+        workflows: Option<Vec<WorkflowDef>>,
+    }
+    let parsed: WorkflowFile =
+        toml::from_str(content).map_err(|e| anyhow::anyhow!("Invalid workflow TOML: {e}"))?;
     Ok(parsed.workflows.unwrap_or_default())
 }
 
@@ -240,7 +268,9 @@ fn fetch_workflow_content(url: &str) -> Result<String> {
 }
 
 pub fn extract_gist_id(url: &str) -> Option<String> {
-    if !url.contains("gist.github.com") { return None; }
+    if !url.contains("gist.github.com") {
+        return None;
+    }
     url.trim_end_matches('/')
         .split('/')
         .next_back()
@@ -259,7 +289,10 @@ fn fetch_via_gh_gist(gist_id: &str) -> Result<String> {
         .output()
         .map_err(|e| anyhow::anyhow!("gh CLI not found: {e}"))?;
     if !out.status.success() {
-        bail!("gh gist view failed: {}", String::from_utf8_lossy(&out.stderr));
+        bail!(
+            "gh gist view failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
     Ok(String::from_utf8_lossy(&out.stdout).to_string())
 }
@@ -273,7 +306,10 @@ fn fetch_url(url: &str) -> Result<String> {
         .output()
         .map_err(|e| anyhow::anyhow!("curl not found: {e}"))?;
     if !out.status.success() {
-        bail!("Failed to fetch {url}: {}", String::from_utf8_lossy(&out.stderr));
+        bail!(
+            "Failed to fetch {url}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
     }
     Ok(String::from_utf8_lossy(&out.stdout).to_string())
 }
@@ -281,11 +317,17 @@ fn fetch_url(url: &str) -> Result<String> {
 // ── Display ───────────────────────────────────────────────────────────────────
 
 fn print_workflow_group(label: &str, workflows: &[WorkflowDef]) {
-    if workflows.is_empty() { return; }
+    if workflows.is_empty() {
+        return;
+    }
     println!("── {label}");
     for wf in workflows {
         let desc = wf.description.as_deref().unwrap_or("");
-        let suffix = if desc.is_empty() { String::new() } else { format!(" — {desc}") };
+        let suffix = if desc.is_empty() {
+            String::new()
+        } else {
+            format!(" — {desc}")
+        };
         println!("   {}{suffix}", wf.name);
         for step in &wf.steps {
             println!("     • dev-claw {step}");
@@ -302,9 +344,9 @@ mod tests {
 
     fn make_wf(name: &str, steps: &[&str]) -> WorkflowDef {
         WorkflowDef {
-            name:        name.to_string(),
+            name: name.to_string(),
             description: None,
-            steps:       steps.iter().map(|s| s.to_string()).collect(),
+            steps: steps.iter().map(|s| s.to_string()).collect(),
         }
     }
 
@@ -312,7 +354,10 @@ mod tests {
 
     #[test]
     fn find_workflow_returns_matching() {
-        let wfs = vec![make_wf("pre-push", &["env check"]), make_wf("release", &["deps audit"])];
+        let wfs = vec![
+            make_wf("pre-push", &["env check"]),
+            make_wf("release", &["deps audit"]),
+        ];
         assert!(find_workflow(&wfs, "pre-push").is_some());
     }
 
@@ -429,7 +474,10 @@ steps = ["deps audit", "review diff"]
     fn extract_gist_id_non_gist_url_returns_none() {
         assert_eq!(extract_gist_id("https://example.com/file.toml"), None);
         assert_eq!(extract_gist_id("https://github.com/user/repo"), None);
-        assert_eq!(extract_gist_id("https://raw.githubusercontent.com/x/y/main/f.toml"), None);
+        assert_eq!(
+            extract_gist_id("https://raw.githubusercontent.com/x/y/main/f.toml"),
+            None
+        );
     }
 
     #[test]
@@ -443,9 +491,9 @@ steps = ["deps audit", "review diff"]
 
     #[test]
     fn save_load_round_trip() {
-        let d    = tempfile::TempDir::new().unwrap();
+        let d = tempfile::TempDir::new().unwrap();
         let path = d.path().join("workflows.toml");
-        let wfs  = vec![make_wf("test-flow", &["env check", "review diff"])];
+        let wfs = vec![make_wf("test-flow", &["env check", "review diff"])];
         std::fs::write(&path, serialize_workflows(&wfs)).unwrap();
         let back = parse_workflow_toml(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(back[0].name, "test-flow");

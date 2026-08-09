@@ -111,23 +111,26 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Doctor     => commands::doctor::run().await,
-        Command::Init       => commands::init::run().await,
-        Command::Git { action }     => commands::git_cmd::run(action).await,
+        Command::Doctor => commands::doctor::run().await,
+        Command::Init => commands::init::run().await,
+        Command::Git { action } => commands::git_cmd::run(action).await,
         Command::Forensic { action } => commands::forensic_cmd::run(action).await,
-        Command::Mock { action }    => commands::mock_cmd::run(action).await,
-        Command::Cloud { action }   => commands::cloud_cmd::run(action).await,
-        Command::Review { action }  => commands::review_cmd::run(action).await,
-        Command::Deps { action }    => commands::deps_cmd::run(action).await,
+        Command::Mock { action } => commands::mock_cmd::run(action).await,
+        Command::Cloud { action } => commands::cloud_cmd::run(action).await,
+        Command::Review { action } => commands::review_cmd::run(action).await,
+        Command::Deps { action } => commands::deps_cmd::run(action).await,
         Command::Release { action } => commands::release_cmd::run(action).await,
         Command::Standup { since, format } => commands::standup_cmd::run(&since, &format).await,
-        Command::Env { action }     => commands::env_cmd::run(action).await,
+        Command::Env { action } => commands::env_cmd::run(action).await,
         Command::Workflow { action } => commands::workflow_cmd::run(action).await,
         Command::Usage => commands::usage_cmd::run().await,
-        Command::Memory { action } => { commands::memory_cmd::run(action)?; Ok(()) }
+        Command::Memory { action } => {
+            commands::memory_cmd::run(action)?;
+            Ok(())
+        }
         Command::Config { action } => match action {
             ConfigAction::SetKey { provider } => commands::config_cmd::set_key(&provider).await,
-            ConfigAction::ListKeys            => commands::config_cmd::list_keys().await,
+            ConfigAction::ListKeys => commands::config_cmd::list_keys().await,
         },
     }
 }

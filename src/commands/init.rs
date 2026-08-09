@@ -81,16 +81,16 @@ reset_day       = 1
 // ── Detected-stack value object ───────────────────────────────────────────────
 
 struct DetectedStack {
-    name:            String,
+    name: String,
     package_manager: String,
     ignore_patterns: Vec<String>,
-    coding_style:    String,
+    coding_style: String,
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
 pub async fn run() -> Result<()> {
-    let dir    = std::env::current_dir()?;
+    let dir = std::env::current_dir()?;
     let output = dir.join(".devclawrc");
 
     if output.exists() {
@@ -98,10 +98,9 @@ pub async fn run() -> Result<()> {
     }
 
     let stack = detect(&dir);
-    let toml  = generate_toml(&stack);
+    let toml = generate_toml(&stack);
 
-    std::fs::write(&output, &toml)
-        .with_context(|| format!("Cannot write {}", output.display()))?;
+    std::fs::write(&output, &toml).with_context(|| format!("Cannot write {}", output.display()))?;
 
     println!("✓  Detected : {} ({})", stack.name, stack.package_manager);
     println!("✓  Created  : .devclawrc");
@@ -127,28 +126,38 @@ fn confirm_overwrite() -> Result<()> {
 // ── Stack detection ───────────────────────────────────────────────────────────
 
 fn detect(dir: &Path) -> DetectedStack {
-    if dir.join("Cargo.toml").exists()   { return rust_stack(); }
-    if dir.join("go.mod").exists()       { return go_stack(); }
-    if dir.join("package.json").exists() { return detect_node(dir); }
-    if dir.join("pyproject.toml").exists()
-        || dir.join("requirements.txt").exists()
-    {
+    if dir.join("Cargo.toml").exists() {
+        return rust_stack();
+    }
+    if dir.join("go.mod").exists() {
+        return go_stack();
+    }
+    if dir.join("package.json").exists() {
+        return detect_node(dir);
+    }
+    if dir.join("pyproject.toml").exists() || dir.join("requirements.txt").exists() {
         return python_stack();
     }
     generic_stack()
 }
 
 fn detect_node(dir: &Path) -> DetectedStack {
-    let pm        = detect_package_manager(dir);
-    let pkg       = read_package_json(dir);
+    let pm = detect_package_manager(dir);
+    let pkg = read_package_json(dir);
     let framework = pkg.as_ref().map(detect_framework).unwrap_or("node");
     node_variant(framework, pm)
 }
 
 fn detect_package_manager(dir: &Path) -> &'static str {
-    if dir.join("pnpm-lock.yaml").exists() { return "pnpm"; }
-    if dir.join("yarn.lock").exists()      { return "yarn"; }
-    if dir.join("bun.lockb").exists()      { return "bun";  }
+    if dir.join("pnpm-lock.yaml").exists() {
+        return "pnpm";
+    }
+    if dir.join("yarn.lock").exists() {
+        return "yarn";
+    }
+    if dir.join("bun.lockb").exists() {
+        return "bun";
+    }
     "npm"
 }
 
@@ -159,9 +168,15 @@ fn read_package_json(dir: &Path) -> Option<serde_json::Value> {
 
 fn detect_framework(pkg: &serde_json::Value) -> &'static str {
     let deps = merged_deps(pkg);
-    if deps.contains_key("next")  { return "nextjs"; }
-    if deps.contains_key("react") { return "react";  }
-    if deps.contains_key("vue")   { return "vue";    }
+    if deps.contains_key("next") {
+        return "nextjs";
+    }
+    if deps.contains_key("react") {
+        return "react";
+    }
+    if deps.contains_key("vue") {
+        return "vue";
+    }
     "node"
 }
 
@@ -178,9 +193,9 @@ fn merged_deps(pkg: &serde_json::Value) -> serde_json::Map<String, serde_json::V
 fn node_variant(framework: &str, pm: &str) -> DetectedStack {
     match framework {
         "nextjs" => nextjs_stack(pm),
-        "react"  => react_stack(pm),
-        "vue"    => vue_stack(pm),
-        _        => generic_node_stack(pm),
+        "react" => react_stack(pm),
+        "vue" => vue_stack(pm),
+        _ => generic_node_stack(pm),
     }
 }
 
@@ -188,73 +203,73 @@ fn node_variant(framework: &str, pm: &str) -> DetectedStack {
 
 fn rust_stack() -> DetectedStack {
     DetectedStack {
-        name:            "rust".into(),
+        name: "rust".into(),
         package_manager: "cargo".into(),
         ignore_patterns: vec!["target/".into()],
-        coding_style:    RUST_STYLE.into(),
+        coding_style: RUST_STYLE.into(),
     }
 }
 
 fn go_stack() -> DetectedStack {
     DetectedStack {
-        name:            "go".into(),
+        name: "go".into(),
         package_manager: "go".into(),
         ignore_patterns: vec!["vendor/".into()],
-        coding_style:    GO_STYLE.into(),
+        coding_style: GO_STYLE.into(),
     }
 }
 
 fn python_stack() -> DetectedStack {
     DetectedStack {
-        name:            "python".into(),
+        name: "python".into(),
         package_manager: "pip".into(),
         ignore_patterns: vec!["__pycache__".into(), ".venv".into(), "dist/".into()],
-        coding_style:    PYTHON_STYLE.into(),
+        coding_style: PYTHON_STYLE.into(),
     }
 }
 
 fn generic_stack() -> DetectedStack {
     DetectedStack {
-        name:            "generic".into(),
+        name: "generic".into(),
         package_manager: "unknown".into(),
         ignore_patterns: vec![],
-        coding_style:    GENERIC_STYLE.into(),
+        coding_style: GENERIC_STYLE.into(),
     }
 }
 
 fn nextjs_stack(pm: &str) -> DetectedStack {
     DetectedStack {
-        name:            "typescript-nextjs".into(),
+        name: "typescript-nextjs".into(),
         package_manager: pm.into(),
         ignore_patterns: vec!["node_modules".into(), ".next".into(), "dist".into()],
-        coding_style:    NEXTJS_STYLE.into(),
+        coding_style: NEXTJS_STYLE.into(),
     }
 }
 
 fn react_stack(pm: &str) -> DetectedStack {
     DetectedStack {
-        name:            "typescript-react".into(),
+        name: "typescript-react".into(),
         package_manager: pm.into(),
         ignore_patterns: vec!["node_modules".into(), "dist".into(), "build".into()],
-        coding_style:    REACT_STYLE.into(),
+        coding_style: REACT_STYLE.into(),
     }
 }
 
 fn vue_stack(pm: &str) -> DetectedStack {
     DetectedStack {
-        name:            "typescript-vue".into(),
+        name: "typescript-vue".into(),
         package_manager: pm.into(),
         ignore_patterns: vec!["node_modules".into(), "dist".into(), ".nuxt".into()],
-        coding_style:    VUE_STYLE.into(),
+        coding_style: VUE_STYLE.into(),
     }
 }
 
 fn generic_node_stack(pm: &str) -> DetectedStack {
     DetectedStack {
-        name:            "node".into(),
+        name: "node".into(),
         package_manager: pm.into(),
         ignore_patterns: vec!["node_modules".into(), "dist".into()],
-        coding_style:    GENERIC_STYLE.into(),
+        coding_style: GENERIC_STYLE.into(),
     }
 }
 
@@ -327,7 +342,8 @@ mod tests {
         fs::write(
             d.path().join("package.json"),
             r#"{"dependencies":{"next":"14","react":"18"}}"#,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(detect(d.path()).name, "typescript-nextjs");
     }
 
@@ -337,7 +353,8 @@ mod tests {
         fs::write(
             d.path().join("package.json"),
             r#"{"devDependencies":{"next":"14"}}"#,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(detect(d.path()).name, "typescript-nextjs");
     }
 
@@ -347,7 +364,8 @@ mod tests {
         fs::write(
             d.path().join("package.json"),
             r#"{"dependencies":{"react":"18","react-dom":"18"}}"#,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(detect(d.path()).name, "typescript-react");
     }
 
@@ -357,7 +375,8 @@ mod tests {
         fs::write(
             d.path().join("package.json"),
             r#"{"dependencies":{"vue":"3"}}"#,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(detect(d.path()).name, "typescript-vue");
     }
 
@@ -414,7 +433,11 @@ mod tests {
     fn cargo_toml_wins_over_package_json() {
         let d = tmp();
         fs::write(d.path().join("Cargo.toml"), "[package]\nname=\"t\"").unwrap();
-        fs::write(d.path().join("package.json"), r#"{"dependencies":{"react":"18"}}"#).unwrap();
+        fs::write(
+            d.path().join("package.json"),
+            r#"{"dependencies":{"react":"18"}}"#,
+        )
+        .unwrap();
         assert_eq!(detect(d.path()).name, "rust");
     }
 
@@ -425,7 +448,10 @@ mod tests {
         let toml_str = generate_toml(&rust_stack());
         let parsed: toml::Value = toml::from_str(&toml_str).expect("invalid TOML generated");
         assert_eq!(parsed["stack"]["name"].as_str().unwrap(), "rust");
-        assert_eq!(parsed["stack"]["package_manager"].as_str().unwrap(), "cargo");
+        assert_eq!(
+            parsed["stack"]["package_manager"].as_str().unwrap(),
+            "cargo"
+        );
     }
 
     #[test]

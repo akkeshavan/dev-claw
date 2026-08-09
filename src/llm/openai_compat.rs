@@ -7,9 +7,9 @@ use super::LlmClient;
 
 pub struct Client {
     base_url: String,
-    api_key:  String,
-    model:    String,
-    http:     HttpClient,
+    api_key: String,
+    model: String,
+    http: HttpClient,
 }
 
 impl Client {
@@ -20,8 +20,8 @@ impl Client {
             .expect("Failed to build HTTP client");
         Self {
             base_url: base_url.to_string(),
-            api_key:  api_key.to_string(),
-            model:    model.to_string(),
+            api_key: api_key.to_string(),
+            model: model.to_string(),
             http,
         }
     }
@@ -29,15 +29,15 @@ impl Client {
 
 #[derive(Serialize)]
 struct ChatRequest<'a> {
-    model:       &'a str,
-    messages:    Vec<Msg<'a>>,
-    max_tokens:  u32,
+    model: &'a str,
+    messages: Vec<Msg<'a>>,
+    max_tokens: u32,
     temperature: f32,
 }
 
 #[derive(Serialize)]
 struct Msg<'a> {
-    role:    &'a str,
+    role: &'a str,
     content: &'a str,
 }
 
@@ -60,10 +60,16 @@ fn build_request<'a>(model: &'a str, system: &'a str, user: &'a str) -> ChatRequ
     ChatRequest {
         model,
         messages: vec![
-            Msg { role: "system", content: system },
-            Msg { role: "user",   content: user },
+            Msg {
+                role: "system",
+                content: system,
+            },
+            Msg {
+                role: "user",
+                content: user,
+            },
         ],
-        max_tokens:  512,
+        max_tokens: 512,
         temperature: 0.1, // Low temperature for deterministic diagnostic output
     }
 }
@@ -81,7 +87,8 @@ impl LlmClient for Client {
     async fn complete(&self, system: &str, user: &str) -> Result<String> {
         let body = build_request(&self.model, system, user);
 
-        let resp = self.http
+        let resp = self
+            .http
             .post(format!("{}/chat/completions", self.base_url))
             .bearer_auth(&self.api_key)
             .json(&body)
@@ -127,7 +134,8 @@ mod tests {
 
     #[test]
     fn response_extracts_content() {
-        let raw = r#"{"choices":[{"message":{"content":"Root cause: missing dep\nFix: npm install"}}]}"#;
+        let raw =
+            r#"{"choices":[{"message":{"content":"Root cause: missing dep\nFix: npm install"}}]}"#;
         let resp: ChatResponse = serde_json::from_str(raw).unwrap();
         assert!(extract_text(resp).unwrap().contains("Root cause"));
     }

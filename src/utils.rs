@@ -16,9 +16,9 @@ pub fn confirm(prompt: &str) -> Result<bool> {
 pub fn safe_output_path(path: &str) -> Result<std::path::PathBuf> {
     // Canonicalize cwd so that symlinked directories (e.g. /Users → /private/Users
     // on macOS) resolve to the same physical root as canonicalize() below.
-    let cwd    = std::env::current_dir()?.canonicalize()?;
+    let cwd = std::env::current_dir()?.canonicalize()?;
     let joined = cwd.join(path);
-    let abs    = if joined.exists() {
+    let abs = if joined.exists() {
         joined.canonicalize()?
     } else {
         let parent = joined
@@ -28,9 +28,7 @@ pub fn safe_output_path(path: &str) -> Result<std::path::PathBuf> {
         canonical_parent.join(joined.file_name().unwrap_or_default())
     };
     if !abs.starts_with(&cwd) {
-        anyhow::bail!(
-            "Output path `{path}` is outside the current directory — refusing to write."
-        );
+        anyhow::bail!("Output path `{path}` is outside the current directory — refusing to write.");
     }
     Ok(abs)
 }

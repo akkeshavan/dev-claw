@@ -7,8 +7,8 @@ use super::LlmClient;
 
 pub struct Client {
     api_key: String,
-    model:   String,
-    http:    HttpClient,
+    model: String,
+    http: HttpClient,
 }
 
 impl Client {
@@ -19,7 +19,7 @@ impl Client {
             .expect("Failed to build HTTP client");
         Self {
             api_key: api_key.to_string(),
-            model:   model.to_string(),
+            model: model.to_string(),
             http,
         }
     }
@@ -27,15 +27,15 @@ impl Client {
 
 #[derive(Serialize)]
 struct Request<'a> {
-    model:      &'a str,
-    system:     &'a str,
-    messages:   Vec<Msg<'a>>,
+    model: &'a str,
+    system: &'a str,
+    messages: Vec<Msg<'a>>,
     max_tokens: u32,
 }
 
 #[derive(Serialize)]
 struct Msg<'a> {
-    role:    &'a str,
+    role: &'a str,
     content: &'a str,
 }
 
@@ -53,7 +53,10 @@ fn build_request<'a>(model: &'a str, system: &'a str, user: &'a str) -> Request<
     Request {
         model,
         system,
-        messages:   vec![Msg { role: "user", content: user }],
+        messages: vec![Msg {
+            role: "user",
+            content: user,
+        }],
         max_tokens: 512,
     }
 }
@@ -71,7 +74,8 @@ impl LlmClient for Client {
     async fn complete(&self, system: &str, user: &str) -> Result<String> {
         let body = build_request(&self.model, system, user);
 
-        let resp = self.http
+        let resp = self
+            .http
             .post("https://api.anthropic.com/v1/messages")
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")

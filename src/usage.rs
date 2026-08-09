@@ -109,7 +109,7 @@ impl UsageTracker {
         total_limit: u32,
         warn_at_percent: u32,
     ) -> Result<Option<String>> {
-        let total    = self.count_total_this_month()?;
+        let total = self.count_total_this_month()?;
         let cmd_used = self.count_this_month(command)?;
 
         Self::check_total_quota(total, total_limit)?;
@@ -195,7 +195,7 @@ mod tests {
         let t = tracker();
         t.check_and_record("doctor", 0, 0, 80).unwrap();
         t.check_and_record("doctor", 0, 0, 80).unwrap();
-        t.check_and_record("git",    0, 0, 80).unwrap();
+        t.check_and_record("git", 0, 0, 80).unwrap();
         assert_eq!(t.count_this_month("doctor").unwrap(), 2);
         assert_eq!(t.count_this_month("git").unwrap(), 1);
         assert_eq!(t.count_total_this_month().unwrap(), 3);

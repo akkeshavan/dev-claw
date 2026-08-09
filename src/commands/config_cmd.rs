@@ -6,7 +6,7 @@ use crate::creds;
 
 pub async fn set_key(provider: &str) -> Result<()> {
     validate_provider(provider)?;
-    let prompt  = format!("{provider} API key: ");
+    let prompt = format!("{provider} API key: ");
     let api_key = rpassword::prompt_password(&prompt)?;
     let api_key = api_key.trim();
     if api_key.is_empty() {
@@ -20,7 +20,7 @@ pub async fn set_key(provider: &str) -> Result<()> {
 // ── list-keys ─────────────────────────────────────────────────────────────────
 
 pub async fn list_keys() -> Result<()> {
-    let dir      = creds::creds_dir()?;
+    let dir = creds::creds_dir()?;
     let providers = creds::stored_providers()?;
     println!("Credentials directory: {}", dir.display());
     println!();
@@ -30,7 +30,11 @@ pub async fn list_keys() -> Result<()> {
         return Ok(());
     }
     for p in &providers {
-        let label = if creds::LLM_PROVIDERS.contains(&p.as_str()) { "LLM" } else { "token" };
+        let label = if creds::LLM_PROVIDERS.contains(&p.as_str()) {
+            "LLM"
+        } else {
+            "token"
+        };
         println!("  ✓  {p}  [{label}]");
     }
     Ok(())

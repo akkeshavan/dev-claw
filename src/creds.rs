@@ -16,8 +16,13 @@ pub const LLM_PROVIDERS: &[&str] = &["deepseek", "openai", "claude", "sarvam", "
 
 /// All valid key names (LLM + cloud tokens).
 pub const ALL_PROVIDERS: &[&str] = &[
-    "deepseek", "openai", "claude", "sarvam", "mistral",
-    "do-token", "hetzner-token",
+    "deepseek",
+    "openai",
+    "claude",
+    "sarvam",
+    "mistral",
+    "do-token",
+    "hetzner-token",
 ];
 
 // ── Session key cache ─────────────────────────────────────────────────────────
@@ -31,7 +36,7 @@ static KEY_CACHE: Mutex<Option<[u8; 32]>> = Mutex::new(None);
 /// Encrypt `api_key` with the master passphrase and write to `~/dev-claw/creds/{provider}.enc`.
 pub fn store(provider: &str, api_key: &str) -> Result<()> {
     let is_new = !salt_path()?.exists();
-    let key    = get_or_derive_key(is_new)?;
+    let key = get_or_derive_key(is_new)?;
     let ciphertext = encrypt(&key, api_key)?;
     let path = cred_path(provider)?;
     std::fs::write(&path, &ciphertext)
@@ -61,21 +66,25 @@ pub fn load(provider: &str) -> Result<String> {
              Run: dev-claw config set-key --provider {provider}"
         );
     }
-    let data = std::fs::read(&path)
-        .map_err(|e| anyhow::anyhow!("Cannot read credential file: {e}"))?;
-    let key  = get_or_derive_key(false)?;
-    decrypt(&key, &data)
-        .map_err(|_| anyhow::anyhow!(
+    let data =
+        std::fs::read(&path).map_err(|e| anyhow::anyhow!("Cannot read credential file: {e}"))?;
+    let key = get_or_derive_key(false)?;
+    decrypt(&key, &data).map_err(|_| {
+        anyhow::anyhow!(
             "Failed to decrypt '{provider}' — wrong master passphrase?\n\
              Check DEV_CLAW_MASTER env var or re-run with correct passphrase."
-        ))
+        )
+    })
 }
 
 /// Returns which providers have credentials stored, in priority order.
 /// Checks DEV_CLAW_PROVIDER env var first, then scans the creds directory.
 pub fn auto_detect_provider() -> Option<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Some(p); }
-    LLM_PROVIDERS.iter()
+    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
+        return Some(p);
+    }
+    LLM_PROVIDERS
+        .iter()
         .find(|&&p| cred_path(p).map(|path| path.exists()).unwrap_or(false))
         .map(|s| s.to_string())
 }
@@ -88,7 +97,9 @@ pub fn stored_providers() -> Result<Vec<String>> {
         let entry = entry?;
         let name = entry.file_name();
         let name = name.to_string_lossy();
-        if name.starts_with('.') { continue; }
+        if name.starts_with('.') {
+            continue;
+        }
         if let Some(provider) = name.strip_suffix(".enc") {
             found.push(provider.to_string());
         }
@@ -145,7 +156,11 @@ fn load_or_create_salt() -> Result<Vec<u8>> {
     // Try atomic create-new first. If the file already exists, read it.
     let mut salt = vec![0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut salt);
-    match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+    {
         Ok(mut f) => {
             use std::io::Write;
             f.write_all(&salt)
@@ -153,8 +168,7 @@ fn load_or_create_salt() -> Result<Vec<u8>> {
             Ok(salt)
         }
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-            std::fs::read(&path)
-                .map_err(|e| anyhow::anyhow!("Cannot read salt file: {e}"))
+            std::fs::read(&path).map_err(|e| anyhow::anyhow!("Cannot read salt file: {e}"))
         }
         Err(e) => Err(anyhow::anyhow!("Cannot create salt file: {e}")),
     }
@@ -174,12 +188,18 @@ pub fn derive_key(passphrase: &str, salt: &[u8]) -> Result<[u8; 32]> {
 }
 
 fn get_passphrase(is_new_vault: bool) -> Result<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_MASTER") { return Ok(p); }
+    if let Ok(p) = std::env::var("DEV_CLAW_MASTER") {
+        return Ok(p);
+    }
     if is_new_vault {
         let p1 = rpassword::prompt_password("Create master passphrase: ")?;
-        if p1.is_empty() { bail!("Master passphrase cannot be empty."); }
+        if p1.is_empty() {
+            bail!("Master passphrase cannot be empty.");
+        }
         let p2 = rpassword::prompt_password("Confirm master passphrase: ")?;
-        if p1 != p2 { bail!("Passphrases do not match. No changes written."); }
+        if p1 != p2 {
+            bail!("Passphrases do not match. No changes written.");
+        }
         return Ok(p1);
     }
     rpassword::prompt_password("Master passphrase: ")
@@ -188,10 +208,12 @@ fn get_passphrase(is_new_vault: bool) -> Result<String> {
 
 fn get_or_derive_key(is_new_vault: bool) -> Result<[u8; 32]> {
     let mut guard = KEY_CACHE.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some(key) = *guard { return Ok(key); }
-    let salt       = load_or_create_salt()?;
+    if let Some(key) = *guard {
+        return Ok(key);
+    }
+    let salt = load_or_create_salt()?;
     let passphrase = get_passphrase(is_new_vault)?;
-    let key        = derive_key(&passphrase, &salt)?;
+    let key = derive_key(&passphrase, &salt)?;
     *guard = Some(key);
     Ok(key)
 }
@@ -203,7 +225,7 @@ pub fn encrypt(key: &[u8; 32], plaintext: &str) -> Result<Vec<u8>> {
     let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
     let mut nonce_bytes = [0u8; 12];
     rand::rngs::OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce      = Nonce::from_slice(&nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
     let ciphertext = cipher
         .encrypt(nonce, plaintext.as_bytes())
         .map_err(|_| anyhow::anyhow!("Encryption failed"))?;
@@ -218,8 +240,8 @@ pub fn decrypt(key: &[u8; 32], data: &[u8]) -> Result<String> {
         bail!("Credential file is too short to be valid (expected ≥29 bytes).");
     }
     let (nonce_bytes, ciphertext) = data.split_at(12);
-    let cipher    = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
-    let nonce     = Nonce::from_slice(nonce_bytes);
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(key));
+    let nonce = Nonce::from_slice(nonce_bytes);
     let plaintext = cipher
         .decrypt(nonce, ciphertext)
         .map_err(|_| anyhow::anyhow!("Decryption failed — wrong passphrase or corrupted file."))?;
@@ -233,25 +255,27 @@ pub fn decrypt(key: &[u8; 32], data: &[u8]) -> Result<String> {
 mod tests {
     use super::*;
 
-    fn test_key() -> [u8; 32] { [42u8; 32] }
+    fn test_key() -> [u8; 32] {
+        [42u8; 32]
+    }
 
     // --- encrypt / decrypt round-trip ---
 
     #[test]
     fn encrypt_decrypt_round_trips() {
-        let key   = test_key();
+        let key = test_key();
         let plain = "sk-test-api-key-12345";
-        let enc   = encrypt(&key, plain).unwrap();
-        let dec   = decrypt(&key, &enc).unwrap();
+        let enc = encrypt(&key, plain).unwrap();
+        let dec = decrypt(&key, &enc).unwrap();
         assert_eq!(dec, plain);
     }
 
     #[test]
     fn encrypt_produces_different_ciphertext_each_time() {
-        let key   = test_key();
+        let key = test_key();
         let plain = "same-plaintext";
-        let enc1  = encrypt(&key, plain).unwrap();
-        let enc2  = encrypt(&key, plain).unwrap();
+        let enc1 = encrypt(&key, plain).unwrap();
+        let enc2 = encrypt(&key, plain).unwrap();
         assert_ne!(enc1, enc2, "random nonce should produce unique ciphertexts");
     }
 
@@ -259,7 +283,7 @@ mod tests {
     fn decrypt_fails_with_wrong_key() {
         let key1 = test_key();
         let key2 = [99u8; 32];
-        let enc  = encrypt(&key1, "secret").unwrap();
+        let enc = encrypt(&key1, "secret").unwrap();
         assert!(decrypt(&key2, &enc).is_err(), "wrong key should fail");
     }
 
@@ -275,11 +299,14 @@ mod tests {
 
     #[test]
     fn decrypt_fails_on_tampered_ciphertext() {
-        let key      = test_key();
-        let mut enc  = encrypt(&key, "secret-value").unwrap();
-        let last     = enc.len() - 1;
-        enc[last]   ^= 0xFF;
-        assert!(decrypt(&key, &enc).is_err(), "tampered data should fail authentication");
+        let key = test_key();
+        let mut enc = encrypt(&key, "secret-value").unwrap();
+        let last = enc.len() - 1;
+        enc[last] ^= 0xFF;
+        assert!(
+            decrypt(&key, &enc).is_err(),
+            "tampered data should fail authentication"
+        );
     }
 
     // --- derive_key ---
@@ -287,16 +314,16 @@ mod tests {
     #[test]
     fn derive_key_is_deterministic() {
         let salt = b"test-salt-32-bytes-exactly!!!!!!";
-        let k1   = derive_key("passphrase", salt).unwrap();
-        let k2   = derive_key("passphrase", salt).unwrap();
+        let k1 = derive_key("passphrase", salt).unwrap();
+        let k2 = derive_key("passphrase", salt).unwrap();
         assert_eq!(k1, k2);
     }
 
     #[test]
     fn derive_key_differs_for_different_passphrases() {
         let salt = b"test-salt-32-bytes-exactly!!!!!!";
-        let k1   = derive_key("pass1", salt).unwrap();
-        let k2   = derive_key("pass2", salt).unwrap();
+        let k1 = derive_key("pass1", salt).unwrap();
+        let k2 = derive_key("pass2", salt).unwrap();
         assert_ne!(k1, k2);
     }
 

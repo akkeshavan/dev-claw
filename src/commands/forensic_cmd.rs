@@ -29,11 +29,11 @@ pub enum ForensicAction {
 // ── Blame line value object ───────────────────────────────────────────────────
 
 struct BlameLine {
-    hash:    String,
-    author:  String,
+    hash: String,
+    author: String,
     summary: String,
     content: String,
-    lineno:  u32,
+    lineno: u32,
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
@@ -41,24 +41,26 @@ struct BlameLine {
 pub async fn run(action: ForensicAction) -> Result<()> {
     match action {
         ForensicAction::Explain { file, lines } => explain(&file, lines.as_deref()).await,
-        ForensicAction::Blame   { file, lines } => blame_cmd(&file, lines.as_deref()),
+        ForensicAction::Blame { file, lines } => blame_cmd(&file, lines.as_deref()),
     }
 }
 
 // ── Explain subcommand ────────────────────────────────────────────────────────
 
 async fn explain(file: &str, lines: Option<&str>) -> Result<()> {
-    let cfg   = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
     let range = lines.map(parse_line_range).transpose()?;
-    let raw   = run_git_blame(file, range)?;
+    let raw = run_git_blame(file, range)?;
     let blame = parse_blame_output(&raw);
     if blame.is_empty() {
         anyhow::bail!("`{file}` has no blame output — is it tracked by git?");
     }
-    let suffix = range.map(|(s, e)| format!(" lines {s}–{e}")).unwrap_or_default();
+    let suffix = range
+        .map(|(s, e)| format!(" lines {s}–{e}"))
+        .unwrap_or_default();
     println!("Analysing {file}{suffix}...\n");
-    let prompt   = build_llm_prompt(file, &blame, range);
+    let prompt = build_llm_prompt(file, &blame, range);
     let analysis = call_llm(&prompt).await?;
     println!("{analysis}");
     Ok(())
@@ -68,7 +70,7 @@ async fn explain(file: &str, lines: Option<&str>) -> Result<()> {
 
 fn blame_cmd(file: &str, lines: Option<&str>) -> Result<()> {
     let range = lines.map(parse_line_range).transpose()?;
-    let raw   = run_git_blame(file, range)?;
+    let raw = run_git_blame(file, range)?;
     let blame = parse_blame_output(&raw);
     if blame.is_empty() {
         anyhow::bail!("`{file}` has no blame output — is it tracked by git?");
@@ -102,7 +104,9 @@ fn parse_blame_output(raw: &str) -> Vec<BlameLine> {
     for line in raw.lines() {
         block.push(line);
         if line.starts_with('\t') {
-            if let Some(b) = parse_blame_block(&block) { result.push(b); }
+            if let Some(b) = parse_blame_block(&block) {
+                result.push(b);
+            }
             block.clear();
         }
     }
@@ -110,18 +114,25 @@ fn parse_blame_output(raw: &str) -> Vec<BlameLine> {
 }
 
 fn parse_blame_block(block: &[&str]) -> Option<BlameLine> {
-    let first   = block.first()?;
+    let first = block.first()?;
     let parts: Vec<&str> = first.split(' ').collect();
-    let hash    = parts.first()?.chars().take(8).collect();
+    let hash = parts.first()?.chars().take(8).collect();
     let lineno: u32 = parts.get(2)?.parse().ok()?;
-    let author  = find_field(block, "author ").unwrap_or("unknown");
+    let author = find_field(block, "author ").unwrap_or("unknown");
     let summary = find_field(block, "summary ").unwrap_or("(no message)");
     let content = block.last()?.strip_prefix('\t').unwrap_or("").to_string();
-    Some(BlameLine { hash, author: author.into(), summary: summary.into(), content, lineno })
+    Some(BlameLine {
+        hash,
+        author: author.into(),
+        summary: summary.into(),
+        content,
+        lineno,
+    })
 }
 
 fn find_field<'a>(block: &[&'a str], prefix: &str) -> Option<&'a str> {
-    block.iter()
+    block
+        .iter()
         .find(|l| l.starts_with(prefix))
         .map(|l| &l[prefix.len()..])
 }
@@ -131,14 +142,19 @@ fn find_field<'a>(block: &[&'a str], prefix: &str) -> Option<&'a str> {
 fn print_blame_table(lines: &[BlameLine]) {
     for l in lines {
         let summary = trunc_display(&l.summary, 38);
-        let author  = trunc_display(&l.author, 20);
-        println!("{} ({author}, {summary}) {:>5}: {}", l.hash, l.lineno, l.content);
+        let author = trunc_display(&l.author, 20);
+        println!(
+            "{} ({author}, {summary}) {:>5}: {}",
+            l.hash, l.lineno, l.content
+        );
     }
 }
 
 fn trunc_display(s: &str, max: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
-    if chars.len() <= max { return s.to_string(); }
+    if chars.len() <= max {
+        return s.to_string();
+    }
     format!("{}…", chars[..max - 1].iter().collect::<String>())
 }
 
@@ -147,13 +163,15 @@ fn trunc_display(s: &str, max: usize) -> String {
 fn build_llm_prompt(file: &str, lines: &[BlameLine], range: Option<(u32, u32)>) -> String {
     let range_str = match range {
         Some((s, e)) => format!("lines {s}–{e}"),
-        None         => "all lines".to_string(),
+        None => "all lines".to_string(),
     };
-    let code = lines.iter()
+    let code = lines
+        .iter()
         .map(|l| format!("{:>4} {}", l.lineno, l.content))
         .collect::<Vec<_>>()
         .join("\n");
-    let commits = unique_summaries(lines).into_iter()
+    let commits = unique_summaries(lines)
+        .into_iter()
         .map(|(h, a, s)| format!("{h} ({a}): {s}"))
         .collect::<Vec<_>>()
         .join("\n");
@@ -163,48 +181,54 @@ fn build_llm_prompt(file: &str, lines: &[BlameLine], range: Option<(u32, u32)>) 
 
 fn unique_summaries(lines: &[BlameLine]) -> Vec<(String, String, String)> {
     let mut seen = HashSet::new();
-    lines.iter()
+    lines
+        .iter()
         .filter(|l| seen.insert(l.hash.clone()))
         .map(|l| (l.hash.clone(), l.author.clone(), l.summary.clone()))
         .collect()
 }
 
 fn truncate_llm(s: &str, max_chars: usize) -> String {
-    if s.chars().count() <= max_chars { return s.to_string(); }
+    if s.chars().count() <= max_chars {
+        return s.to_string();
+    }
     let trimmed: String = s.chars().take(max_chars).collect();
     format!("{trimmed}\n[... truncated]")
 }
 
 async fn call_llm(prompt: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("forensic");
+    let ctx = memory::context_for_prompt("forensic");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let client   = llm::client_for(&provider, &api_key);
+    let api_key = creds::load(&provider)?;
+    let client = llm::client_for(&provider, &api_key);
     let base_system = "You are a code historian. Given source lines and git blame metadata, \
                     explain WHY this code exists — what problem it solved, what bug it fixed, \
                     or what feature it implements. Be concise and specific.";
-    let system   = format!("{ctx}{base_system}");
-    let result   = client.complete(&system, prompt).await?;
+    let system = format!("{ctx}{base_system}");
+    let result = client.complete(&system, prompt).await?;
     memory::record_interaction("forensic", &result);
     Ok(result)
 }
 
 fn resolve_provider() -> Result<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    creds::auto_detect_provider()
-        .ok_or_else(|| anyhow::anyhow!(
+    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
+        return Ok(p);
+    }
+    creds::auto_detect_provider().ok_or_else(|| {
+        anyhow::anyhow!(
             "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-        ))
+        )
+    })
 }
 
 // ── Quota enforcement ─────────────────────────────────────────────────────────
 
 fn enforce_quota(cfg: &Config) -> Result<()> {
-    let tracker   = UsageTracker::open()?;
-    let limits    = cfg.usage.as_ref();
-    let monthly   = limits.map(|l| l.monthly_limit()).unwrap_or(200);
+    let tracker = UsageTracker::open()?;
+    let limits = cfg.usage.as_ref();
+    let monthly = limits.map(|l| l.monthly_limit()).unwrap_or(200);
     let cmd_limit = limits.map(|l| l.forensic_limit()).unwrap_or(50);
-    let warn_at   = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
+    let warn_at = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
     if let Some(w) = tracker.check_and_record("forensic", cmd_limit, monthly, warn_at)? {
         eprintln!("{w}");
     }
@@ -214,11 +238,16 @@ fn enforce_quota(cfg: &Config) -> Result<()> {
 // ── Line range parsing ────────────────────────────────────────────────────────
 
 fn parse_line_range(s: &str) -> Result<(u32, u32)> {
-    let (a, b) = s.split_once('-')
+    let (a, b) = s
+        .split_once('-')
         .ok_or_else(|| anyhow::anyhow!("Expected range like 10-25, got: {s}"))?;
-    let start: u32 = a.trim().parse()
+    let start: u32 = a
+        .trim()
+        .parse()
         .map_err(|_| anyhow::anyhow!("Invalid start line: {a}"))?;
-    let end: u32   = b.trim().parse()
+    let end: u32 = b
+        .trim()
+        .parse()
         .map_err(|_| anyhow::anyhow!("Invalid end line: {b}"))?;
     if start > end {
         anyhow::bail!("Start {start} must be ≤ end {end}");
@@ -302,12 +331,27 @@ filename src/payment.rs\n\
         let lines = parse_blame_output(SAMPLE_PORCELAIN);
         // Build a second set with a duplicate of lines[0]
         let with_dup = vec![
-            BlameLine { hash: "abc12345".into(), author: "Alice".into(),
-                        summary: "Fix the null ptr".into(), content: "x".into(), lineno: 1 },
-            BlameLine { hash: "abc12345".into(), author: "Alice".into(),
-                        summary: "Fix the null ptr".into(), content: "y".into(), lineno: 2 },
-            BlameLine { hash: "def12345".into(), author: "Bob".into(),
-                        summary: "Add retry".into(), content: "z".into(), lineno: 3 },
+            BlameLine {
+                hash: "abc12345".into(),
+                author: "Alice".into(),
+                summary: "Fix the null ptr".into(),
+                content: "x".into(),
+                lineno: 1,
+            },
+            BlameLine {
+                hash: "abc12345".into(),
+                author: "Alice".into(),
+                summary: "Fix the null ptr".into(),
+                content: "y".into(),
+                lineno: 2,
+            },
+            BlameLine {
+                hash: "def12345".into(),
+                author: "Bob".into(),
+                summary: "Add retry".into(),
+                content: "z".into(),
+                lineno: 3,
+            },
         ];
         let summaries = unique_summaries(&with_dup);
         assert_eq!(summaries.len(), 2);

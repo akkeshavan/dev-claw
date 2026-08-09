@@ -18,13 +18,29 @@ pub enum EnvAction {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const SECRET_KEYWORDS: &[&str] = &[
-    "SECRET", "PASSWORD", "API_KEY", "TOKEN", "PRIVATE_KEY",
-    "ACCESS_KEY", "AUTH_KEY", "CREDENTIALS", "PASSPHRASE", "PASSWD",
+    "SECRET",
+    "PASSWORD",
+    "API_KEY",
+    "TOKEN",
+    "PRIVATE_KEY",
+    "ACCESS_KEY",
+    "AUTH_KEY",
+    "CREDENTIALS",
+    "PASSPHRASE",
+    "PASSWD",
 ];
 
 const PLACEHOLDER_VALUES: &[&str] = &[
-    "changeme", "placeholder", "your_key_here", "xxx", "todo",
-    "replace_me", "example", "test", "dummy", "fake",
+    "changeme",
+    "placeholder",
+    "your_key_here",
+    "xxx",
+    "todo",
+    "replace_me",
+    "example",
+    "test",
+    "dummy",
+    "fake",
 ];
 
 // ── Public entry point ────────────────────────────────────────────────────────
@@ -33,7 +49,7 @@ pub async fn run(action: EnvAction) -> Result<()> {
     match action {
         EnvAction::Check => check_env(),
         EnvAction::Guard => guard_env(),
-        EnvAction::Hook  => install_hooks(),
+        EnvAction::Hook => install_hooks(),
     }
 }
 
@@ -41,8 +57,8 @@ pub async fn run(action: EnvAction) -> Result<()> {
 
 struct CheckResult {
     missing: Vec<String>,
-    empty:   Vec<String>,
-    extra:   Vec<String>,
+    empty: Vec<String>,
+    extra: Vec<String>,
 }
 
 fn check_env() -> Result<()> {
@@ -51,11 +67,14 @@ fn check_env() -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("No .env.example / .env.sample / .env.template found"))?;
     let env_path = dir.join(".env");
     if !env_path.exists() {
-        bail!(".env not found — copy {} and fill in values", example_path.display());
+        bail!(
+            ".env not found — copy {} and fill in values",
+            example_path.display()
+        );
     }
     let example = parse_env_file(&std::fs::read_to_string(&example_path)?);
-    let env     = parse_env_file(&std::fs::read_to_string(&env_path)?);
-    let result  = compare_envs(&example, &env);
+    let env = parse_env_file(&std::fs::read_to_string(&env_path)?);
+    let result = compare_envs(&example, &env);
     print_check_result(&result, &example_path.display().to_string());
     if !result.missing.is_empty() {
         std::process::exit(1);
@@ -66,30 +85,37 @@ fn check_env() -> Result<()> {
 fn find_example_file(dir: &Path) -> Option<std::path::PathBuf> {
     for name in [".env.example", ".env.sample", ".env.template"] {
         let p = dir.join(name);
-        if p.exists() { return Some(p); }
+        if p.exists() {
+            return Some(p);
+        }
     }
     None
 }
 
 fn compare_envs(
     example: &BTreeMap<String, Option<String>>,
-    env:     &BTreeMap<String, Option<String>>,
+    env: &BTreeMap<String, Option<String>>,
 ) -> CheckResult {
     let mut missing = Vec::new();
-    let mut empty   = Vec::new();
+    let mut empty = Vec::new();
     for key in example.keys() {
         match env.get(key) {
-            None                          => missing.push(key.clone()),
-            Some(None)                    => empty.push(key.clone()),
+            None => missing.push(key.clone()),
+            Some(None) => empty.push(key.clone()),
             Some(Some(v)) if v.is_empty() => empty.push(key.clone()),
-            Some(Some(_))                 => {}
+            Some(Some(_)) => {}
         }
     }
-    let extra = env.keys()
+    let extra = env
+        .keys()
         .filter(|k| !example.contains_key(*k))
         .cloned()
         .collect();
-    CheckResult { missing, empty, extra }
+    CheckResult {
+        missing,
+        empty,
+        extra,
+    }
 }
 
 fn print_check_result(r: &CheckResult, example_name: &str) {
@@ -97,20 +123,29 @@ fn print_check_result(r: &CheckResult, example_name: &str) {
         println!("✓  .env is in sync with {example_name}");
         return;
     }
-    for key in &r.missing { println!("✗  MISSING : {key}  (required by {example_name})"); }
-    for key in &r.empty   { println!("⚠  EMPTY   : {key}  (set in {example_name} but blank in .env)"); }
-    for key in &r.extra   { println!("·  EXTRA   : {key}  (in .env but not in {example_name})"); }
+    for key in &r.missing {
+        println!("✗  MISSING : {key}  (required by {example_name})");
+    }
+    for key in &r.empty {
+        println!("⚠  EMPTY   : {key}  (set in {example_name} but blank in .env)");
+    }
+    for key in &r.extra {
+        println!("·  EXTRA   : {key}  (in .env but not in {example_name})");
+    }
     if !r.missing.is_empty() {
         println!();
-        println!("  {} variable(s) missing — add them to .env", r.missing.len());
+        println!(
+            "  {} variable(s) missing — add them to .env",
+            r.missing.len()
+        );
     }
 }
 
 // ── Guard subcommand ──────────────────────────────────────────────────────────
 
 struct SecretLeak {
-    file:    String,
-    line:    u32,
+    file: String,
+    line: u32,
     pattern: String,
     context: String,
 }
@@ -141,19 +176,31 @@ fn staged_diff() -> Result<String> {
         .args(["diff", "--cached"])
         .output()?;
     if !out.status.success() {
-        anyhow::bail!("git diff failed: {}", String::from_utf8_lossy(&out.stderr).trim());
+        anyhow::bail!(
+            "git diff failed: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        );
     }
     Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
 fn find_leaks(diff: &str) -> Vec<SecretLeak> {
-    let mut leaks   = Vec::new();
-    let mut file    = String::new();
+    let mut leaks = Vec::new();
+    let mut file = String::new();
     let mut line_no = 0u32;
     for raw in diff.lines() {
-        if let Some(f) = parse_diff_filename(raw) { file = f; line_no = 0; continue; }
-        if let Some(n) = parse_hunk_start(raw)    { line_no = n; continue; }
-        if is_diff_meta(raw) || raw.starts_with('-') { continue; }
+        if let Some(f) = parse_diff_filename(raw) {
+            file = f;
+            line_no = 0;
+            continue;
+        }
+        if let Some(n) = parse_hunk_start(raw) {
+            line_no = n;
+            continue;
+        }
+        if is_diff_meta(raw) || raw.starts_with('-') {
+            continue;
+        }
         if is_added_line(raw) {
             if let Some(leak) = check_line_for_leak(&raw[1..], &file, line_no) {
                 leaks.push(leak);
@@ -165,7 +212,10 @@ fn find_leaks(diff: &str) -> Vec<SecretLeak> {
 }
 
 fn check_line_for_leak(content: &str, file: &str, line: u32) -> Option<SecretLeak> {
-    let name = Path::new(file).file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let name = Path::new(file)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
     if name.ends_with(".example") || name.ends_with(".sample") || name.ends_with(".template") {
         return None; // example files are intentionally public
     }
@@ -177,9 +227,14 @@ fn check_line_for_leak(content: &str, file: &str, line: u32) -> Option<SecretLea
 
 fn check_secret_file_line(content: &str, file: &str, line: u32) -> Option<SecretLeak> {
     let trimmed = content.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') { return None; }
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+        return None;
+    }
     let (_, val) = parse_env_line(content)?;
-    if !val.as_deref().is_some_and(|v| !v.is_empty() && !is_placeholder_value(v)) {
+    if !val
+        .as_deref()
+        .is_some_and(|v| !v.is_empty() && !is_placeholder_value(v))
+    {
         return None;
     }
     Some(SecretLeak {
@@ -192,9 +247,12 @@ fn check_secret_file_line(content: &str, file: &str, line: u32) -> Option<Secret
 
 fn check_kv_leak(content: &str, file: &str, line: u32) -> Option<SecretLeak> {
     let (key, val) = parse_env_line(content)?;
-    let key_upper  = key.to_uppercase();
-    let keyword    = SECRET_KEYWORDS.iter().find(|&&kw| key_upper.contains(kw))?;
-    if !val.as_deref().is_some_and(|v| !v.is_empty() && !is_placeholder_value(v)) {
+    let key_upper = key.to_uppercase();
+    let keyword = SECRET_KEYWORDS.iter().find(|&&kw| key_upper.contains(kw))?;
+    if !val
+        .as_deref()
+        .is_some_and(|v| !v.is_empty() && !is_placeholder_value(v))
+    {
         return None;
     }
     Some(SecretLeak {
@@ -217,8 +275,11 @@ fn redact_value(content: &str) -> String {
 fn install_hooks() -> Result<()> {
     let hooks_dir = hooks_path()?;
     std::fs::create_dir_all(&hooks_dir)?;
-    install_hook(&hooks_dir.join("pre-commit"),    "dev-claw env guard\n")?;
-    install_hook(&hooks_dir.join("post-checkout"), "dev-claw env check || true\n")?;
+    install_hook(&hooks_dir.join("pre-commit"), "dev-claw env guard\n")?;
+    install_hook(
+        &hooks_dir.join("post-checkout"),
+        "dev-claw env check || true\n",
+    )?;
     println!("✓  Hooks installed in {}", hooks_dir.display());
     println!("   pre-commit   : runs `dev-claw env guard`");
     println!("   post-checkout: runs `dev-claw env check` on branch switch");
@@ -275,19 +336,29 @@ pub fn parse_env_file(content: &str) -> BTreeMap<String, Option<String>> {
 
 fn parse_env_line(line: &str) -> Option<(String, Option<String>)> {
     let trimmed = line.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') { return None; }
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+        return None;
+    }
     let stripped = trimmed.strip_prefix("export ").unwrap_or(trimmed);
-    let eq  = stripped.find('=')?;
+    let eq = stripped.find('=')?;
     let key = stripped[..eq].trim().to_string();
-    if key.is_empty() { return None; }
+    if key.is_empty() {
+        return None;
+    }
     let raw_val = stripped[eq + 1..].trim();
-    let val = if raw_val.is_empty() { None } else { Some(parse_value(raw_val)) };
+    let val = if raw_val.is_empty() {
+        None
+    } else {
+        Some(parse_value(raw_val))
+    };
     Some((key, val))
 }
 
 fn parse_value(raw: &str) -> String {
     if raw.starts_with('"') && raw.ends_with('"') && raw.len() >= 2 {
-        return raw[1..raw.len() - 1].replace("\\\"", "\"").replace("\\n", "\n");
+        return raw[1..raw.len() - 1]
+            .replace("\\\"", "\"")
+            .replace("\\n", "\n");
     }
     if raw.starts_with('\'') && raw.ends_with('\'') && raw.len() >= 2 {
         return raw[1..raw.len() - 1].to_string();
@@ -300,12 +371,15 @@ fn parse_value(raw: &str) -> String {
 
 fn is_placeholder_value(val: &str) -> bool {
     let lower = val.to_lowercase();
-    if PLACEHOLDER_VALUES.iter().any(|&p| lower == p) { return true; }
+    if PLACEHOLDER_VALUES.iter().any(|&p| lower == p) {
+        return true;
+    }
     val.starts_with("${") || val.starts_with('<') || val.contains("REPLACE")
 }
 
 fn is_secret_env_file(file: &str) -> bool {
-    let name = Path::new(file).file_name()
+    let name = Path::new(file)
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("");
     if name.ends_with(".example") || name.ends_with(".sample") || name.ends_with(".template") {
@@ -317,15 +391,19 @@ fn is_secret_env_file(file: &str) -> bool {
 // ── Diff helpers (local copies — keep modules independent) ────────────────────
 
 fn parse_diff_filename(line: &str) -> Option<String> {
-    let rest   = line.strip_prefix("diff --git ")?;
+    let rest = line.strip_prefix("diff --git ")?;
     let b_part = rest.split(' ').next_back()?;
     Some(b_part.trim_start_matches("b/").to_string())
 }
 
 fn parse_hunk_start(line: &str) -> Option<u32> {
-    let rest  = line.strip_prefix("@@ -")?;
+    let rest = line.strip_prefix("@@ -")?;
     let after = rest.split('+').nth(1)?;
-    after.split(|c: char| !c.is_ascii_digit()).next()?.parse().ok()
+    after
+        .split(|c: char| !c.is_ascii_digit())
+        .next()?
+        .parse()
+        .ok()
 }
 
 fn is_diff_meta(line: &str) -> bool {
@@ -464,7 +542,7 @@ mod tests {
     #[test]
     fn compare_reports_missing_keys() {
         let example = parse_env_file("API_KEY=\nDB_URL=\n");
-        let env     = parse_env_file("DB_URL=postgres://localhost\n");
+        let env = parse_env_file("DB_URL=postgres://localhost\n");
         let r = compare_envs(&example, &env);
         assert_eq!(r.missing, vec!["API_KEY"]);
     }
@@ -472,7 +550,7 @@ mod tests {
     #[test]
     fn compare_reports_empty_keys() {
         let example = parse_env_file("API_KEY=\n");
-        let env     = parse_env_file("API_KEY=\n");
+        let env = parse_env_file("API_KEY=\n");
         let r = compare_envs(&example, &env);
         assert!(r.missing.is_empty());
         assert_eq!(r.empty, vec!["API_KEY"]);
@@ -481,7 +559,7 @@ mod tests {
     #[test]
     fn compare_reports_extra_keys() {
         let example = parse_env_file("KEY=\n");
-        let env     = parse_env_file("KEY=value\nEXTRA=val\n");
+        let env = parse_env_file("KEY=value\nEXTRA=val\n");
         let r = compare_envs(&example, &env);
         assert_eq!(r.extra, vec!["EXTRA"]);
     }
@@ -489,7 +567,7 @@ mod tests {
     #[test]
     fn compare_in_sync_reports_nothing() {
         let example = parse_env_file("KEY=\n");
-        let env     = parse_env_file("KEY=value\n");
+        let env = parse_env_file("KEY=value\n");
         let r = compare_envs(&example, &env);
         assert!(r.missing.is_empty() && r.empty.is_empty() && r.extra.is_empty());
     }

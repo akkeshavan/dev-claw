@@ -32,27 +32,27 @@ impl PackageManager {
     pub fn name(&self) -> &'static str {
         match self {
             Self::Cargo => "cargo",
-            Self::Npm   => "npm",
-            Self::Go    => "go",
-            Self::Pip   => "pip",
+            Self::Npm => "npm",
+            Self::Go => "go",
+            Self::Pip => "pip",
         }
     }
 
     pub fn audit_cmd(&self) -> (&'static str, &'static [&'static str]) {
         match self {
             Self::Cargo => ("cargo", &["audit"]),
-            Self::Npm   => ("npm",   &["audit"]),
-            Self::Go    => ("govulncheck", &["./..."]),
-            Self::Pip   => ("pip-audit", &[]),
+            Self::Npm => ("npm", &["audit"]),
+            Self::Go => ("govulncheck", &["./..."]),
+            Self::Pip => ("pip-audit", &[]),
         }
     }
 
     pub fn outdated_cmd(&self) -> (&'static str, &'static [&'static str]) {
         match self {
             Self::Cargo => ("cargo", &["outdated"]),
-            Self::Npm   => ("npm",   &["outdated"]),
-            Self::Go    => ("go",    &["list", "-u", "-m", "all"]),
-            Self::Pip   => ("pip",   &["list", "--outdated"]),
+            Self::Npm => ("npm", &["outdated"]),
+            Self::Go => ("go", &["list", "-u", "-m", "all"]),
+            Self::Pip => ("pip", &["list", "--outdated"]),
         }
     }
 }
@@ -64,9 +64,15 @@ pub fn detect_package_managers() -> Vec<PackageManager> {
 
 pub fn detect_package_managers_in(dir: &std::path::Path) -> Vec<PackageManager> {
     let mut found = Vec::new();
-    if dir.join("Cargo.toml").exists()    { found.push(PackageManager::Cargo); }
-    if dir.join("package.json").exists()  { found.push(PackageManager::Npm);   }
-    if dir.join("go.mod").exists()        { found.push(PackageManager::Go);    }
+    if dir.join("Cargo.toml").exists() {
+        found.push(PackageManager::Cargo);
+    }
+    if dir.join("package.json").exists() {
+        found.push(PackageManager::Npm);
+    }
+    if dir.join("go.mod").exists() {
+        found.push(PackageManager::Go);
+    }
     if dir.join("pyproject.toml").exists() || dir.join("requirements.txt").exists() {
         found.push(PackageManager::Pip);
     }
@@ -78,7 +84,7 @@ pub fn detect_package_managers_in(dir: &std::path::Path) -> Vec<PackageManager> 
 pub async fn run(action: DepsAction) -> Result<()> {
     match action {
         DepsAction::Audit { triage } => audit(triage).await,
-        DepsAction::Outdated         => outdated().await,
+        DepsAction::Outdated => outdated().await,
     }
 }
 
@@ -129,7 +135,11 @@ pub fn run_tool(cmd: &str, args: &[&str]) -> String {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout);
             let stderr = String::from_utf8_lossy(&out.stderr);
-            if stdout.trim().is_empty() { stderr.trim().to_string() } else { stdout.trim().to_string() }
+            if stdout.trim().is_empty() {
+                stderr.trim().to_string()
+            } else {
+                stdout.trim().to_string()
+            }
         }
     }
 }
@@ -139,16 +149,18 @@ pub fn run_tool(cmd: &str, args: &[&str]) -> String {
 const MAX_AUDIT_CHARS: usize = 10_000;
 
 fn truncate_audit(s: &str) -> String {
-    if s.chars().count() <= MAX_AUDIT_CHARS { return s.to_string(); }
+    if s.chars().count() <= MAX_AUDIT_CHARS {
+        return s.to_string();
+    }
     let trimmed: String = s.chars().take(MAX_AUDIT_CHARS).collect();
     format!("{trimmed}\n[... truncated at {MAX_AUDIT_CHARS} chars]")
 }
 
 async fn llm_triage(audit_output: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("deps");
+    let ctx = memory::context_for_prompt("deps");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let client   = llm::client_for(&provider, &api_key);
+    let api_key = creds::load(&provider)?;
+    let client = llm::client_for(&provider, &api_key);
     let base_system = "You are a security engineer triaging dependency vulnerabilities. \
         For each vulnerability found, assess: severity (Critical/High/Medium/Low), \
         whether it is exploitable in a typical web/CLI context, and whether an upgrade is available. \
@@ -165,10 +177,14 @@ async fn llm_triage(audit_output: &str) -> Result<String> {
 }
 
 fn resolve_provider() -> Result<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
-        "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-    ))
+    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
+        return Ok(p);
+    }
+    creds::auto_detect_provider().ok_or_else(|| {
+        anyhow::anyhow!(
+            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
+        )
+    })
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -182,7 +198,10 @@ mod tests {
     fn detect_none_in_empty_dir() {
         let d = TempDir::new().unwrap();
         let found = detect_package_managers_in(d.path());
-        assert!(found.is_empty(), "expected no package managers, got {found:?}");
+        assert!(
+            found.is_empty(),
+            "expected no package managers, got {found:?}"
+        );
     }
 
     #[test]
@@ -238,9 +257,9 @@ mod tests {
     #[test]
     fn package_manager_names() {
         assert_eq!(PackageManager::Cargo.name(), "cargo");
-        assert_eq!(PackageManager::Npm.name(),   "npm");
-        assert_eq!(PackageManager::Go.name(),    "go");
-        assert_eq!(PackageManager::Pip.name(),   "pip");
+        assert_eq!(PackageManager::Npm.name(), "npm");
+        assert_eq!(PackageManager::Go.name(), "go");
+        assert_eq!(PackageManager::Pip.name(), "pip");
     }
 
     #[test]

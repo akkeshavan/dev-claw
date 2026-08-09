@@ -3,15 +3,15 @@ use anyhow::Result;
 use crate::{config::Config, usage::UsageTracker};
 
 pub async fn run() -> Result<()> {
-    let cfg     = Config::load()?;
+    let cfg = Config::load()?;
     let use_cfg = cfg.usage.as_ref();
 
-    let total_limit  = use_cfg.map(|u| u.monthly_limit()).unwrap_or(200);
+    let total_limit = use_cfg.map(|u| u.monthly_limit()).unwrap_or(200);
     let doctor_limit = use_cfg.map(|u| u.doctor_limit()).unwrap_or(75);
 
     let tracker = UsageTracker::open()?;
-    let total   = tracker.count_total_this_month()?;
-    let doctor  = tracker.count_this_month("doctor")?;
+    let total = tracker.count_total_this_month()?;
+    let doctor = tracker.count_this_month("doctor")?;
 
     if total_limit == 0 {
         print_unlimited(total, doctor);
@@ -44,7 +44,7 @@ fn print_limited(total: u32, total_limit: u32, doctor: u32, doctor_limit: u32) {
 
 fn progress_bar(pct: u32, width: u32) -> String {
     let filled = ((pct * width) / 100).min(width) as usize;
-    let empty  = (width as usize).saturating_sub(filled);
+    let empty = (width as usize).saturating_sub(filled);
     format!("{}{}", "█".repeat(filled), "░".repeat(empty))
 }
 
@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn progress_bar_width_is_always_correct() {
         for pct in [0, 25, 50, 75, 100] {
-            let bar   = progress_bar(pct, 20);
+            let bar = progress_bar(pct, 20);
             let total = bar.chars().filter(|&c| c == '█' || c == '░').count();
             assert_eq!(total, 20, "bar width wrong at {pct}%");
         }

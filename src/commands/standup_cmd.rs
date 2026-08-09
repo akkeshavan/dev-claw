@@ -7,9 +7,9 @@ use crate::{config::Config, creds, llm, memory, usage::UsageTracker};
 
 pub async fn run(since: &str, format: &str) -> Result<()> {
     validate_format(format)?;
-    let cfg    = Config::load()?;
+    let cfg = Config::load()?;
     enforce_quota(&cfg)?;
-    let author  = git_author()?;
+    let author = git_author()?;
     let commits = recent_commits(since, &author)?;
     let branches = active_branches();
     if commits.is_empty() && branches.is_empty() {
@@ -57,9 +57,15 @@ pub fn recent_commits(since: &str, author: &str) -> Result<Vec<String>> {
 
 pub fn active_branches() -> Vec<String> {
     let out = Command::new("git")
-        .args(["branch", "--sort=-committerdate", "--format=%(refname:short)"])
+        .args([
+            "branch",
+            "--sort=-committerdate",
+            "--format=%(refname:short)",
+        ])
         .output();
-    let Ok(out) = out else { return vec![]; };
+    let Ok(out) = out else {
+        return vec![];
+    };
     String::from_utf8_lossy(&out.stdout)
         .lines()
         .map(str::trim)
@@ -72,24 +78,32 @@ pub fn active_branches() -> Vec<String> {
 // ── LLM draft ─────────────────────────────────────────────────────────────────
 
 async fn draft_standup(commits: &[String], branches: &[String], format: &str) -> Result<String> {
-    let ctx      = memory::context_for_prompt("standup");
+    let ctx = memory::context_for_prompt("standup");
     let provider = resolve_provider()?;
-    let api_key  = creds::load(&provider)?;
-    let client   = llm::client_for(&provider, &api_key);
-    let system   = format!("{ctx}{}", build_system_prompt(format));
-    let result   = client.complete(&system, &build_prompt(commits, branches)).await?;
+    let api_key = creds::load(&provider)?;
+    let client = llm::client_for(&provider, &api_key);
+    let system = format!("{ctx}{}", build_system_prompt(format));
+    let result = client
+        .complete(&system, &build_prompt(commits, branches))
+        .await?;
     memory::record_interaction("standup", &result);
     Ok(result)
 }
 
 pub fn build_system_prompt(format: &str) -> String {
     let fmt_hint = match format {
-        "slack"    => "Format the standup with emoji bullets (✅ Done, 🔧 In Progress, 🚧 Blockers). \
-                       Keep each point to one line. Use *bold* for section headers.",
-        "markdown" => "Format with ## Done, ## In Progress, ## Blockers sections. \
-                       Use bullet lists under each section.",
-        _          => "Format as plain text with Done / In Progress / Blockers sections. \
-                       No markdown or special formatting.",
+        "slack" => {
+            "Format the standup with emoji bullets (✅ Done, 🔧 In Progress, 🚧 Blockers). \
+                       Keep each point to one line. Use *bold* for section headers."
+        }
+        "markdown" => {
+            "Format with ## Done, ## In Progress, ## Blockers sections. \
+                       Use bullet lists under each section."
+        }
+        _ => {
+            "Format as plain text with Done / In Progress / Blockers sections. \
+                       No markdown or special formatting."
+        }
     };
     format!(
         "You are a developer writing a daily standup update. \
@@ -101,7 +115,7 @@ pub fn build_system_prompt(format: &str) -> String {
 }
 
 pub fn build_prompt(commits: &[String], branches: &[String]) -> String {
-    let commit_list  = if commits.is_empty() {
+    let commit_list = if commits.is_empty() {
         "(no commits in range)".to_string()
     } else {
         commits.join("\n")
@@ -111,9 +125,7 @@ pub fn build_prompt(commits: &[String], branches: &[String]) -> String {
     } else {
         branches.join(", ")
     };
-    format!(
-        "Recent commits:\n{commit_list}\n\nActive branches: {branch_list}\n\nWrite my standup."
-    )
+    format!("Recent commits:\n{commit_list}\n\nActive branches: {branch_list}\n\nWrite my standup.")
 }
 
 // ── Format validation ─────────────────────────────────────────────────────────
@@ -121,15 +133,20 @@ pub fn build_prompt(commits: &[String], branches: &[String]) -> String {
 const VALID_FORMATS: &[&str] = &["plain", "slack", "markdown"];
 
 fn validate_format(fmt: &str) -> Result<()> {
-    if VALID_FORMATS.contains(&fmt) { return Ok(()); }
-    bail!("Unknown format `{fmt}`. Valid options: {}", VALID_FORMATS.join(", "))
+    if VALID_FORMATS.contains(&fmt) {
+        return Ok(());
+    }
+    bail!(
+        "Unknown format `{fmt}`. Valid options: {}",
+        VALID_FORMATS.join(", ")
+    )
 }
 
 // ── Quota enforcement ─────────────────────────────────────────────────────────
 
 fn enforce_quota(cfg: &Config) -> Result<()> {
     let tracker = UsageTracker::open()?;
-    let limits  = cfg.usage.as_ref();
+    let limits = cfg.usage.as_ref();
     let monthly = limits.map(|l| l.monthly_limit()).unwrap_or(200);
     let warn_at = limits.map(|l| l.warn_at_percent()).unwrap_or(80);
     if let Some(w) = tracker.check_and_record("standup", monthly, monthly, warn_at)? {
@@ -139,10 +156,14 @@ fn enforce_quota(cfg: &Config) -> Result<()> {
 }
 
 fn resolve_provider() -> Result<String> {
-    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") { return Ok(p); }
-    creds::auto_detect_provider().ok_or_else(|| anyhow::anyhow!(
-        "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-    ))
+    if let Ok(p) = std::env::var("DEV_CLAW_PROVIDER") {
+        return Ok(p);
+    }
+    creds::auto_detect_provider().ok_or_else(|| {
+        anyhow::anyhow!(
+            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
+        )
+    })
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -201,7 +222,10 @@ mod tests {
 
     #[test]
     fn build_prompt_includes_commits() {
-        let commits  = vec!["feat: new login".to_string(), "fix: crash on start".to_string()];
+        let commits = vec![
+            "feat: new login".to_string(),
+            "fix: crash on start".to_string(),
+        ];
         let branches = vec!["feature/auth".to_string()];
         let p = build_prompt(&commits, &branches);
         assert!(p.contains("feat: new login"));
@@ -236,7 +260,7 @@ mod tests {
         // asking for commits in the future should return empty
         let result = recent_commits("2099-01-01", "nobody@example.com");
         match result {
-            Ok(v)  => assert!(v.is_empty()),
+            Ok(v) => assert!(v.is_empty()),
             Err(_) => {} // no git repo is also acceptable
         }
     }

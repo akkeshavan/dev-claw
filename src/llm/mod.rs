@@ -14,27 +14,37 @@ pub trait LlmClient: Send + Sync {
 pub fn client_for(provider: &str, api_key: &str) -> Box<dyn LlmClient> {
     match provider {
         "deepseek" => Box::new(openai_compat::Client::new(
-            "https://api.deepseek.com/v1", api_key, "deepseek-chat",
+            "https://api.deepseek.com/v1",
+            api_key,
+            "deepseek-chat",
         )),
         "openai" => Box::new(openai_compat::Client::new(
-            "https://api.openai.com/v1", api_key, "gpt-4o-mini",
+            "https://api.openai.com/v1",
+            api_key,
+            "gpt-4o-mini",
         )),
         "ollama" => Box::new(openai_compat::Client::new(
-            "http://localhost:11434/v1", "ollama", "llama3",
+            "http://localhost:11434/v1",
+            "ollama",
+            "llama3",
         )),
-        "claude" => Box::new(anthropic::Client::new(
-            api_key, "claude-haiku-4-5-20251001",
-        )),
+        "claude" => Box::new(anthropic::Client::new(api_key, "claude-haiku-4-5-20251001")),
         "sarvam" => Box::new(openai_compat::Client::new(
-            "https://api.sarvam.ai/v1", api_key, "sarvam-m",
+            "https://api.sarvam.ai/v1",
+            api_key,
+            "sarvam-m",
         )),
         "mistral" => Box::new(openai_compat::Client::new(
-            "https://api.mistral.ai/v1", api_key, "mistral-small-latest",
+            "https://api.mistral.ai/v1",
+            api_key,
+            "mistral-small-latest",
         )),
         other => {
             eprintln!("Unknown provider '{other}', falling back to deepseek");
             Box::new(openai_compat::Client::new(
-                "https://api.deepseek.com/v1", api_key, "deepseek-chat",
+                "https://api.deepseek.com/v1",
+                api_key,
+                "deepseek-chat",
             ))
         }
     }
@@ -46,7 +56,9 @@ mod tests {
 
     #[test]
     fn known_providers_return_clients() {
-        for provider in ["deepseek", "openai", "claude", "ollama", "sarvam", "mistral"] {
+        for provider in [
+            "deepseek", "openai", "claude", "ollama", "sarvam", "mistral",
+        ] {
             let _ = client_for(provider, "sk-test");
         }
     }
