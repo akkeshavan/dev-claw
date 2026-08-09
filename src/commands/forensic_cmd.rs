@@ -24,6 +24,9 @@ pub enum ForensicAction {
         #[arg(long, value_name = "START-END")]
         lines: Option<String>,
     },
+    /// Natural language query — dev-claw forensic "<what you want to know>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Blame line value object ───────────────────────────────────────────────────
@@ -42,6 +45,7 @@ pub async fn run(action: ForensicAction) -> Result<()> {
     match action {
         ForensicAction::Explain { file, lines } => explain(&file, lines.as_deref()).await,
         ForensicAction::Blame { file, lines } => blame_cmd(&file, lines.as_deref()),
+        ForensicAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

@@ -29,6 +29,9 @@ pub enum MockAction {
         #[arg(short, long)]
         out: Option<String>,
     },
+    /// Natural language query — dev-claw mock "<what you want to generate>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -47,6 +50,7 @@ pub async fn run(action: MockAction) -> Result<()> {
             out,
         } => gen(&schema, count, &format, out.as_deref()).await,
         MockAction::Factory { types_file, out } => factory(&types_file, out.as_deref()).await,
+        MockAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

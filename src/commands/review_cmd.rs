@@ -30,6 +30,9 @@ pub enum ReviewAction {
         #[arg(long, default_value = "all")]
         focus: String,
     },
+    /// Natural language query — dev-claw review "<what you want to review>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
@@ -38,6 +41,7 @@ pub async fn run(action: ReviewAction) -> Result<()> {
     match action {
         ReviewAction::Diff { staged, focus } => review_diff(staged, &focus).await,
         ReviewAction::Pr { number, focus } => review_pr(number, &focus).await,
+        ReviewAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

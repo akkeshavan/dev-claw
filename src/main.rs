@@ -6,6 +6,7 @@ mod config;
 mod creds;
 mod llm;
 mod memory;
+pub mod nl;
 mod usage;
 mod utils;
 
@@ -21,7 +22,18 @@ QUICK START:
   dev-claw git commit                           # AI commit message
   dev-claw standup                              # today's standup from git
 
-COMMON WORKFLOWS:
+NATURAL LANGUAGE INTERFACE:
+  # Scoped — cheaper (~150 tokens), single domain (recommended):
+  dev-claw git \"squash last 3 commits and open a PR\"
+  dev-claw review \"check staged changes for security issues\"
+  dev-claw deps \"audit and triage anything critical\"
+  dev-claw release \"draft notes and cut v2.0.0\"
+
+  # Global — more expensive (~600 tokens), for cross-domain workflows:
+  dev-claw \"review staged changes and if clean commit and push\"
+  dev-claw \"sync with main, resolve conflicts, then push\"
+
+COMMON WORKFLOWS (structured):
   # Before every push
   dev-claw env check && dev-claw review diff --staged && dev-claw deps audit
 
@@ -305,6 +317,14 @@ ALTERNATIVE — set via environment variable (no passphrase needed):
         #[command(subcommand)]
         action: ConfigAction,
     },
+
+    /// Global natural language interface — dev-claw "<what you want to do>"
+    ///
+    /// Sends all ~40 tool schemas to the planner (~600 extra tokens).
+    /// Prefer scoped NL for single-domain requests — it's cheaper and more accurate:
+    ///   dev-claw git "..."  |  dev-claw review "..."  |  dev-claw deps "..."
+    #[command(external_subcommand)]
+    Do(Vec<String>),
 }
 
 #[derive(Subcommand)]
@@ -326,24 +346,68 @@ async fn main() -> Result<()> {
     match cli.command {
         Command::Doctor => commands::doctor::run().await,
         Command::Init => commands::init::run().await,
-        Command::Git { action } => commands::git_cmd::run(action).await,
-        Command::Forensic { action } => commands::forensic_cmd::run(action).await,
-        Command::Mock { action } => commands::mock_cmd::run(action).await,
-        Command::Cloud { action } => commands::cloud_cmd::run(action).await,
-        Command::Review { action } => commands::review_cmd::run(action).await,
-        Command::Deps { action } => commands::deps_cmd::run(action).await,
-        Command::Release { action } => commands::release_cmd::run(action).await,
+        Command::Git { action } => match action {
+            commands::git_cmd::GitAction::Nl(args) => nl::run_scoped("git", &args.join(" ")).await,
+            other => commands::git_cmd::run(other).await,
+        },
+        Command::Forensic { action } => match action {
+            commands::forensic_cmd::ForensicAction::Nl(args) => {
+                nl::run_scoped("forensic", &args.join(" ")).await
+            }
+            other => commands::forensic_cmd::run(other).await,
+        },
+        Command::Mock { action } => match action {
+            commands::mock_cmd::MockAction::Nl(args) => {
+                nl::run_scoped("mock", &args.join(" ")).await
+            }
+            other => commands::mock_cmd::run(other).await,
+        },
+        Command::Cloud { action } => match action {
+            commands::cloud_cmd::CloudAction::Nl(args) => {
+                nl::run_scoped("cloud", &args.join(" ")).await
+            }
+            other => commands::cloud_cmd::run(other).await,
+        },
+        Command::Review { action } => match action {
+            commands::review_cmd::ReviewAction::Nl(args) => {
+                nl::run_scoped("review", &args.join(" ")).await
+            }
+            other => commands::review_cmd::run(other).await,
+        },
+        Command::Deps { action } => match action {
+            commands::deps_cmd::DepsAction::Nl(args) => {
+                nl::run_scoped("deps", &args.join(" ")).await
+            }
+            other => commands::deps_cmd::run(other).await,
+        },
+        Command::Release { action } => match action {
+            commands::release_cmd::ReleaseAction::Nl(args) => {
+                nl::run_scoped("release", &args.join(" ")).await
+            }
+            other => commands::release_cmd::run(other).await,
+        },
         Command::Standup { since, format } => commands::standup_cmd::run(&since, &format).await,
-        Command::Env { action } => commands::env_cmd::run(action).await,
-        Command::Workflow { action } => commands::workflow_cmd::run(action).await,
+        Command::Env { action } => match action {
+            commands::env_cmd::EnvAction::Nl(args) => nl::run_scoped("env", &args.join(" ")).await,
+            other => commands::env_cmd::run(other).await,
+        },
+        Command::Workflow { action } => match action {
+            commands::workflow_cmd::WorkflowAction::Nl(args) => {
+                nl::run_scoped("workflow", &args.join(" ")).await
+            }
+            other => commands::workflow_cmd::run(other).await,
+        },
         Command::Usage => commands::usage_cmd::run().await,
-        Command::Memory { action } => {
-            commands::memory_cmd::run(action)?;
-            Ok(())
-        }
+        Command::Memory { action } => match action {
+            commands::memory_cmd::MemoryAction::Nl(args) => {
+                nl::run_scoped("memory", &args.join(" ")).await
+            }
+            other => commands::memory_cmd::run(other).await,
+        },
         Command::Config { action } => match action {
             ConfigAction::SetKey { provider } => commands::config_cmd::set_key(&provider).await,
             ConfigAction::ListKeys => commands::config_cmd::list_keys().await,
         },
+        Command::Do(args) => nl::run_global(&args.join(" ")).await,
     }
 }

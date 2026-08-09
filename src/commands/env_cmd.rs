@@ -13,6 +13,9 @@ pub enum EnvAction {
     Guard,
     /// Install pre-commit and post-checkout git hooks
     Hook,
+    /// Natural language query — dev-claw env "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -50,6 +53,7 @@ pub async fn run(action: EnvAction) -> Result<()> {
         EnvAction::Check => check_env(),
         EnvAction::Guard => guard_env(),
         EnvAction::Hook => install_hooks(),
+        EnvAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

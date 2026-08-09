@@ -23,6 +23,9 @@ pub enum ReleaseAction {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Natural language query — dev-claw release "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
@@ -31,6 +34,7 @@ pub async fn run(action: ReleaseAction) -> Result<()> {
     match action {
         ReleaseAction::Notes { since } => notes(since.as_deref()).await,
         ReleaseAction::Cut { version, dry_run } => cut(version.as_deref(), dry_run).await,
+        ReleaseAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

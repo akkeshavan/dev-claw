@@ -16,6 +16,9 @@ pub enum DepsAction {
     },
     /// Check for outdated dependencies across detected package managers
     Outdated,
+    /// Natural language query — dev-claw deps "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Package manager detection ─────────────────────────────────────────────────
@@ -85,6 +88,7 @@ pub async fn run(action: DepsAction) -> Result<()> {
     match action {
         DepsAction::Audit { triage } => audit(triage).await,
         DepsAction::Outdated => outdated().await,
+        DepsAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

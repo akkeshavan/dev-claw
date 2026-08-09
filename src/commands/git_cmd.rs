@@ -151,6 +151,9 @@ EXAMPLES:
         #[arg(value_name = "SHA")]
         sha: String,
     },
+    /// Natural language query — dev-claw git "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── LLM prompts ───────────────────────────────────────────────────────────────
@@ -390,6 +393,7 @@ pub async fn run(action: GitAction) -> Result<()> {
         GitAction::Rebase { n } => run_rebase(&cfg, n).await,
         GitAction::Stash { message } => run_stash(&cfg, message.as_deref()).await,
         GitAction::CherryPick { sha } => run_cherry_pick(&cfg, &sha).await,
+        GitAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

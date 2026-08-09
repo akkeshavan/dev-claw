@@ -34,11 +34,14 @@ pub enum MemoryAction {
         #[arg(long)]
         all: bool,
     },
+    /// Natural language query — dev-claw memory "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Public entry point ────────────────────────────────────────────────────────
 
-pub fn run(action: MemoryAction) -> Result<()> {
+pub async fn run(action: MemoryAction) -> Result<()> {
     match action {
         MemoryAction::Ls => memory::show(),
 
@@ -63,6 +66,7 @@ pub fn run(action: MemoryAction) -> Result<()> {
         }
 
         MemoryAction::Clear { global, all } => clear(global, all),
+        MemoryAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

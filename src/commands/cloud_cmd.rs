@@ -39,6 +39,9 @@ pub enum CloudAction {
         /// VM name or local ID
         vm: String,
     },
+    /// Natural language query — dev-claw cloud "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -277,6 +280,7 @@ pub async fn run(action: CloudAction) -> Result<()> {
         CloudAction::Ls => ls(),
         CloudAction::Down { vm } => down(&vm).await,
         CloudAction::Ssh { vm } => ssh(&vm),
+        CloudAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 

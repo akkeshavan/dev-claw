@@ -29,6 +29,9 @@ pub enum WorkflowAction {
         /// Gist URL (https://gist.github.com/...) or raw TOML URL
         url: String,
     },
+    /// Natural language query — dev-claw workflow "<what you want to do>"
+    #[command(external_subcommand)]
+    Nl(Vec<String>),
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -43,6 +46,7 @@ pub async fn run(action: WorkflowAction) -> Result<()> {
         WorkflowAction::Run { name, dry_run } => run_workflow(&name, dry_run),
         WorkflowAction::Publish { name } => publish_workflow(&name),
         WorkflowAction::Import { url } => import_workflow(&url),
+        WorkflowAction::Nl(_) => unreachable!("Nl handled in main"),
     }
 }
 
