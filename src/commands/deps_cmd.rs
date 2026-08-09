@@ -136,6 +136,14 @@ pub fn run_tool(cmd: &str, args: &[&str]) -> String {
 
 // ── LLM triage ────────────────────────────────────────────────────────────────
 
+const MAX_AUDIT_CHARS: usize = 10_000;
+
+fn truncate_audit(s: &str) -> String {
+    if s.chars().count() <= MAX_AUDIT_CHARS { return s.to_string(); }
+    let trimmed: String = s.chars().take(MAX_AUDIT_CHARS).collect();
+    format!("{trimmed}\n[... truncated at {MAX_AUDIT_CHARS} chars]")
+}
+
 async fn llm_triage(audit_output: &str) -> Result<String> {
     let ctx      = memory::context_for_prompt("deps");
     let provider = resolve_provider()?;
@@ -147,7 +155,10 @@ async fn llm_triage(audit_output: &str) -> Result<String> {
         Conclude with a ranked action list: what to fix now vs. later vs. ignore. \
         Be concise and specific.";
     let system = format!("{ctx}{base_system}");
-    let prompt = format!("Audit output from package managers:\n\n{audit_output}\n\nTriage these findings.");
+    let prompt = format!(
+        "Audit output from package managers:\n\n{}\n\nTriage these findings.",
+        truncate_audit(audit_output)
+    );
     let result = client.complete(&system, &prompt).await?;
     memory::record_interaction("deps", &result);
     Ok(result)

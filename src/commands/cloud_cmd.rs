@@ -442,10 +442,16 @@ async fn destroy_hetzner(vm_id: &str, token: &str) -> Result<()> {
 // ── Cloud CLI — AWS ───────────────────────────────────────────────────────────
 
 fn provision_aws(spec: &VmSpec) -> Result<(String, Option<String>)> {
-    let tags = format!(
-        "ResourceType=instance,Tags=[{{Key=Name,Value={}}},{{Key=CreatedBy,Value=dev-claw}}]",
-        spec.name
-    );
+    // Use JSON format for --tag-specifications so that special characters in
+    // spec.name cannot break the shorthand syntax parser in the AWS CLI.
+    let tags = serde_json::json!([{
+        "ResourceType": "instance",
+        "Tags": [
+            {"Key": "Name",      "Value": spec.name},
+            {"Key": "CreatedBy", "Value": "dev-claw"},
+        ]
+    }])
+    .to_string();
     let out = std::process::Command::new("aws")
         .args(["ec2", "run-instances",
                "--image-id",        &spec.image,

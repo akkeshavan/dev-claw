@@ -42,6 +42,8 @@ pub async fn run() -> Result<()> {
     Ok(())
 }
 
+const MAX_STDIN_BYTES: u64 = 1_048_576; // 1 MiB
+
 fn read_stdin() -> Result<String> {
     if io::stdin().is_terminal() {
         anyhow::bail!(
@@ -52,6 +54,7 @@ fn read_stdin() -> Result<String> {
     }
     let mut buf = String::new();
     io::stdin()
+        .take(MAX_STDIN_BYTES)
         .read_to_string(&mut buf)
         .context("Failed to read from stdin")?;
     if buf.trim().is_empty() {

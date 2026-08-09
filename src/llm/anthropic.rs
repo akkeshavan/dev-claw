@@ -13,10 +13,14 @@ pub struct Client {
 
 impl Client {
     pub fn new(api_key: &str, model: &str) -> Self {
+        let http = HttpClient::builder()
+            .timeout(std::time::Duration::from_secs(60))
+            .build()
+            .expect("Failed to build HTTP client");
         Self {
             api_key: api_key.to_string(),
             model:   model.to_string(),
-            http:    HttpClient::new(),
+            http,
         }
     }
 }

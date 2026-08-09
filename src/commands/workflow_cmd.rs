@@ -31,6 +31,10 @@ pub enum WorkflowAction {
     },
 }
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const MAX_WORKFLOW_STEPS: usize = 50;
+
 // ── Public entry point ────────────────────────────────────────────────────────
 
 pub async fn run(action: WorkflowAction) -> Result<()> {
@@ -130,6 +134,14 @@ fn import_workflow(url: &str) -> Result<()> {
     let incoming = parse_workflow_toml(&content)?;
     if incoming.is_empty() {
         bail!("No [[workflows]] found at {url}");
+    }
+    for def in &incoming {
+        if def.steps.len() > MAX_WORKFLOW_STEPS {
+            bail!(
+                "Workflow '{}' has {} steps (max {MAX_WORKFLOW_STEPS}) — refusing to import.",
+                def.name, def.steps.len()
+            );
+        }
     }
     let mut existing = load_global_workflows()?;
     let mut added = 0usize;
@@ -237,8 +249,13 @@ pub fn extract_gist_id(url: &str) -> Option<String> {
 }
 
 fn fetch_via_gh_gist(gist_id: &str) -> Result<String> {
+    // Validate gist_id is safe (GitHub gist IDs are hex strings).
+    // A value starting with '-' would be misinterpreted as a gh CLI flag.
+    if gist_id.is_empty() || !gist_id.chars().all(|c| c.is_ascii_alphanumeric()) {
+        bail!("Invalid gist ID (expected alphanumeric): {gist_id}");
+    }
     let out = Command::new("gh")
-        .args(["gist", "view", gist_id, "--raw"])
+        .args(["gist", "view", "--", gist_id, "--raw"])
         .output()
         .map_err(|e| anyhow::anyhow!("gh CLI not found: {e}"))?;
     if !out.status.success() {
@@ -252,7 +269,7 @@ fn fetch_url(url: &str) -> Result<String> {
         bail!("Only http:// and https:// URLs are supported for workflow import (got: {url})");
     }
     let out = Command::new("curl")
-        .args(["-fsSL", url])
+        .args(["-fsSL", "--max-filesize", "1048576", url])
         .output()
         .map_err(|e| anyhow::anyhow!("curl not found: {e}"))?;
     if !out.status.success() {
