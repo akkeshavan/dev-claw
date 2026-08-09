@@ -65,19 +65,35 @@ EXAMPLES:
   cat .devclawrc                # review the generated config")]
     Init,
 
-    /// Generate commit messages, draft PRs, and install git hooks
+    /// AI-powered git workflow — commits, PRs, branches, rebases, conflict resolution
     #[command(after_help = "\
 SUBCOMMANDS:
-  commit   Generate a conventional commit message from staged changes
-  pr       Draft a PR description from commits since main
-  hook     Install dev-claw as a git pre-commit hook
-  check    Scan staged diff for blocked keywords
+  commit       Generate a conventional commit message from staged changes
+  pr           Draft a PR description; --create pushes branch + opens PR via gh
+  branch       AI branch name from a plain-English description
+  push         Smart push — sets upstream, guards secrets, supports --force
+  squash       Squash last N commits with an AI-generated message
+  resolve      AI-assisted merge conflict resolution
+  sync         Fetch origin and rebase onto origin/<base>
+  log          AI narrative summary of recent commits
+  rebase       AI interactive-rebase plan for the last N commits
+  stash        Stash changes with an AI-generated description
+  cherry-pick  Cherry-pick a commit; resolves conflicts with AI if needed
+  check        Scan staged diff for blocked keywords
+  hook         Install dev-claw as a git pre-commit hook
 
 EXAMPLES:
   git add -p && dev-claw git commit
-  dev-claw git pr
-  dev-claw git pr --base develop
-  dev-claw git hook")]
+  dev-claw git branch \"add dark mode toggle\" --apply
+  dev-claw git squash 3 --apply
+  dev-claw git pr --create
+  dev-claw git push
+  dev-claw git resolve
+  dev-claw git sync
+  dev-claw git log --since \"2 days ago\"
+  dev-claw git rebase 5
+  dev-claw git stash
+  dev-claw git cherry-pick abc1234")]
     Git {
         #[command(subcommand)]
         action: commands::git_cmd::GitAction,
