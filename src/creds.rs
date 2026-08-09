@@ -75,14 +75,14 @@ pub fn load(provider: &str) -> Result<String> {
 
 fn env_key_for(provider: &str) -> Option<String> {
     let var = match provider {
-        "openai"               => "OPENAI_API_KEY",
+        "openai" => "OPENAI_API_KEY",
         "anthropic" | "claude" => "ANTHROPIC_API_KEY",
-        "deepseek"             => "DEEPSEEK_API_KEY",
-        "groq"                 => "GROQ_API_KEY",
-        "mistral"              => "MISTRAL_API_KEY",
-        "openrouter"           => "OPENROUTER_API_KEY",
-        "sarvam"               => "SARVAM_API_KEY",
-        _                      => return None,
+        "deepseek" => "DEEPSEEK_API_KEY",
+        "groq" => "GROQ_API_KEY",
+        "mistral" => "MISTRAL_API_KEY",
+        "openrouter" => "OPENROUTER_API_KEY",
+        "sarvam" => "SARVAM_API_KEY",
+        _ => return None,
     };
     std::env::var(var).ok()
 }
