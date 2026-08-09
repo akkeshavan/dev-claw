@@ -51,6 +51,13 @@ Extract and copy the `dev-claw` binary to any directory in your `$PATH`.
 
 No other system dependencies are needed. The build uses `rustls` (pure-Rust TLS) and bundles SQLite, so `openssl` and `libsqlite3-dev` are not required.
 
+> **Note:** `dev-claw git commit` and `dev-claw git pr` generate messages using an LLM but delegate the actual git operations to your existing `git` installation. Git must already be configured with your identity and credentials:
+> ```sh
+> git config --global user.name "Your Name"
+> git config --global user.email "you@example.com"
+> # For GitHub push: gh auth login   (or SSH keys / osxkeychain)
+> ```
+
 ```sh
 git clone https://github.com/akkeshavan/dev-claw
 cd dev-claw
@@ -108,6 +115,8 @@ cat ci-failure.log | dev-claw doctor
 ---
 
 ### `dev-claw git`
+
+> dev-claw generates the message; your existing git credentials handle the actual commit and push. Git must be configured with `user.name`/`user.email` before use.
 
 **`commit`** — generate a Conventional Commits message from staged diff.
 

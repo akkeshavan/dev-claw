@@ -62,7 +62,12 @@ dev-claw config set-key --provider ollama     <span class="comment"># local, no 
 <span class="comment"># 3. Start automating</span>
 cargo build 2&gt;&amp;1 | dev-claw doctor   <span class="comment"># diagnose a build error</span>
 dev-claw git commit                   <span class="comment"># AI-written commit message</span>
-dev-claw standup                      <span class="comment"># today's standup from git</span></code></pre>
+dev-claw standup                      <span class="comment"># today's standup from git</span>
+
+<span class="comment"># Note: dev-claw git commit generates the message but uses your existing</span>
+<span class="comment"># git setup for the actual commit. Git must be configured first:</span>
+<span class="comment"># git config --global user.name "Your Name"</span>
+<span class="comment"># git config --global user.email "you@example.com"</span></code></pre>
     </div>
   </div>
 </section>
