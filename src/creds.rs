@@ -57,13 +57,44 @@ fn restrict_file_permissions(_path: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-/// Read and decrypt the stored key for `provider`.
+/// Read the API key for `provider`.
+///
+/// Resolution order:
+///   1. Standard provider env var (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY)
+///   2. Generic DEV_CLAW_API_KEY env var
+///   3. Encrypted credential store (~/.dev-claw/creds/{provider}.enc)
 pub fn load(provider: &str) -> Result<String> {
+    if let Some(key) = env_key_for(provider) {
+        return Ok(key);
+    }
+    if let Ok(key) = std::env::var("DEV_CLAW_API_KEY") {
+        return Ok(key);
+    }
+    load_from_store(provider)
+}
+
+fn env_key_for(provider: &str) -> Option<String> {
+    let var = match provider {
+        "openai"               => "OPENAI_API_KEY",
+        "anthropic" | "claude" => "ANTHROPIC_API_KEY",
+        "deepseek"             => "DEEPSEEK_API_KEY",
+        "groq"                 => "GROQ_API_KEY",
+        "mistral"              => "MISTRAL_API_KEY",
+        "openrouter"           => "OPENROUTER_API_KEY",
+        "sarvam"               => "SARVAM_API_KEY",
+        _                      => return None,
+    };
+    std::env::var(var).ok()
+}
+
+fn load_from_store(provider: &str) -> Result<String> {
     let path = cred_path(provider)?;
     if !path.exists() {
         bail!(
-            "No API key stored for '{provider}'.\n\
-             Run: dev-claw config set-key --provider {provider}"
+            "No API key found for '{provider}'.\n\
+             Set it with:  dev-claw config set-key --provider {provider}\n\
+             Or export:    export {}_API_KEY=<your-key>",
+            provider.to_uppercase().replace('-', "_")
         );
     }
     let data =
@@ -379,6 +410,37 @@ mod tests {
         let providers = stored_providers().unwrap();
         std::env::remove_var("DEV_CLAW_CREDS_DIR");
         assert!(providers.is_empty());
+    }
+
+    // --- env var key resolution ---
+
+    #[test]
+    fn load_uses_standard_env_var_before_store() {
+        std::env::set_var("OPENAI_API_KEY", "sk-env-test");
+        let result = load("openai").unwrap();
+        std::env::remove_var("OPENAI_API_KEY");
+        assert_eq!(result, "sk-env-test");
+    }
+
+    #[test]
+    fn load_uses_generic_dev_claw_api_key() {
+        std::env::set_var("DEV_CLAW_API_KEY", "sk-generic-test");
+        let result = load("groq").unwrap();
+        std::env::remove_var("DEV_CLAW_API_KEY");
+        assert_eq!(result, "sk-generic-test");
+    }
+
+    #[test]
+    fn env_key_for_maps_known_providers() {
+        std::env::set_var("ANTHROPIC_API_KEY", "sk-ant-test");
+        assert_eq!(env_key_for("anthropic"), Some("sk-ant-test".to_string()));
+        assert_eq!(env_key_for("claude"), Some("sk-ant-test".to_string()));
+        std::env::remove_var("ANTHROPIC_API_KEY");
+    }
+
+    #[test]
+    fn env_key_for_returns_none_for_unknown_provider() {
+        assert_eq!(env_key_for("unknown-provider"), None);
     }
 
     // --- auto_detect_provider ---
