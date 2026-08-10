@@ -1445,4 +1445,186 @@ d
         fs::write(&path, "existing hook").unwrap();
         assert!(install_hook(&path).is_err());
     }
+
+    // --- parse_conflicts edge cases ---
+
+    #[test]
+    fn parse_conflicts_empty_ours_side() {
+        let content = "\
+<<<<<<< HEAD
+=======
+their content
+>>>>>>> branch
+";
+        let conflicts = parse_conflicts(content);
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].ours, "");
+        assert_eq!(conflicts[0].theirs, "their content");
+    }
+
+    #[test]
+    fn parse_conflicts_empty_theirs_side() {
+        let content = "\
+<<<<<<< HEAD
+our content
+=======
+>>>>>>> branch
+";
+        let conflicts = parse_conflicts(content);
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].ours, "our content");
+        assert_eq!(conflicts[0].theirs, "");
+    }
+
+    #[test]
+    fn parse_conflicts_records_line_numbers() {
+        let content = "\
+line1
+<<<<<<< HEAD
+ours
+=======
+theirs
+>>>>>>> branch
+line7
+";
+        let conflicts = parse_conflicts(content);
+        assert_eq!(conflicts.len(), 1);
+        assert!(conflicts[0].start_line < conflicts[0].end_line);
+    }
+
+    // --- apply_resolutions edge cases ---
+
+    #[test]
+    fn apply_resolutions_empty_resolution_removes_conflict_block() {
+        let original = "\
+prefix
+<<<<<<< HEAD
+ours
+=======
+theirs
+>>>>>>> branch
+suffix
+";
+        let conflicts = parse_conflicts(original);
+        let result = apply_resolutions(original, &conflicts, &["".to_string()]);
+        assert!(!result.contains("<<<<<<<"));
+        assert!(result.contains("prefix"));
+        assert!(result.contains("suffix"));
+    }
+
+    #[test]
+    fn apply_resolutions_noop_with_zero_conflicts() {
+        let original = "clean file\nno conflicts\n";
+        let conflicts = parse_conflicts(original);
+        assert!(conflicts.is_empty());
+        let result = apply_resolutions(original, &conflicts, &[]);
+        assert_eq!(result, original);
+    }
+
+    // --- find_violations edge cases ---
+
+    #[test]
+    fn find_violations_case_sensitive() {
+        let diff = "\
+diff --git a/x.rs b/x.rs
+index abc..def 100644
+--- a/x.rs
++++ b/x.rs
+@@ -1 +1 @@
++todo!()
+";
+        let kws = vec!["TODO".to_string()];
+        assert!(find_violations(diff, &kws).is_empty());
+        let kws2 = vec!["todo".to_string()];
+        assert!(!find_violations(diff, &kws2).is_empty());
+    }
+
+    #[test]
+    fn find_violations_context_lines_not_flagged() {
+        let diff = "\
+diff --git a/f.rs b/f.rs
+index abc..def 100644
+--- a/f.rs
++++ b/f.rs
+@@ -1,2 +1,2 @@
+ console.log(\"context - not flagged\")
++let x = 1;
+";
+        let kws = vec!["console.log".to_string()];
+        assert!(find_violations(diff, &kws).is_empty());
+    }
+
+    #[test]
+    fn find_violations_empty_keywords_returns_empty() {
+        let diff = "\
+diff --git a/x.rs b/x.rs
+index abc..def 100644
+--- a/x.rs
++++ b/x.rs
+@@ -1 +1 @@
++console.log(\"debug\")
+";
+        assert!(find_violations(diff, &[]).is_empty());
+    }
+
+    // --- line_violations ---
+
+    #[test]
+    fn line_violations_returns_match() {
+        let kws = vec!["console.log".to_string(), "debugger".to_string()];
+        let vs = line_violations("  console.log('x');", "src/app.js", 42, &kws);
+        assert_eq!(vs.len(), 1);
+        assert_eq!(vs[0].keyword, "console.log");
+        assert_eq!(vs[0].file, "src/app.js");
+        assert_eq!(vs[0].line, 42);
+    }
+
+    #[test]
+    fn line_violations_returns_all_matching_keywords() {
+        let kws = vec!["TODO".to_string(), "FIXME".to_string()];
+        let vs = line_violations("// TODO: FIXME this", "f.rs", 1, &kws);
+        assert_eq!(vs.len(), 2);
+    }
+
+    #[test]
+    fn line_violations_returns_empty_no_match() {
+        let kws = vec!["console.log".to_string()];
+        let vs = line_violations("let x = 5;", "f.rs", 1, &kws);
+        assert!(vs.is_empty());
+    }
+
+    // --- parse_diff_filename ---
+
+    #[test]
+    fn parse_diff_filename_rename_uses_b_path() {
+        let line = "diff --git a/old_name.rs b/new_name.rs";
+        let name = parse_diff_filename(line).unwrap();
+        assert_eq!(name, "new_name.rs");
+    }
+
+    // --- is_diff_metadata ---
+
+    #[test]
+    fn is_diff_metadata_covers_various_markers() {
+        // Markers the implementation handles: index, +++ header, backslash
+        assert!(is_diff_metadata("+++ b/file.rs"));
+        assert!(is_diff_metadata("index abc..def 100644"));
+        assert!(is_diff_metadata("\\ No newline at end of file"));
+        // Non-metadata lines
+        assert!(!is_diff_metadata("+actual added content"));
+        assert!(!is_diff_metadata(" context line"));
+        assert!(!is_diff_metadata("-removed line"));
+        // --- header is not handled by this function (it's the old-file marker)
+        assert!(!is_diff_metadata("--- a/file.rs"));
+    }
+
+    // --- effective_keywords ---
+
+    #[test]
+    fn effective_keywords_is_nonempty_by_default() {
+        let cfg = Config::default();
+        let kws = effective_keywords(&cfg);
+        assert!(!kws.is_empty());
+        assert!(kws.iter().any(|k| k.contains("TODO")));
+    }
 }

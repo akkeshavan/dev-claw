@@ -485,4 +485,65 @@ mod tests {
             assert!(ALL_PROVIDERS.contains(p), "{p} missing from ALL_PROVIDERS");
         }
     }
+
+    #[test]
+    fn cred_path_rejects_dotdot_traversal() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::env::set_var("DEV_CLAW_CREDS_DIR", d.path());
+        let result = cred_path("../outside");
+        std::env::remove_var("DEV_CLAW_CREDS_DIR");
+        assert!(result.is_err(), "path traversal must be rejected");
+    }
+
+    #[test]
+    fn cred_path_rejects_slash_in_name() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::env::set_var("DEV_CLAW_CREDS_DIR", d.path());
+        let result = cred_path("foo/bar");
+        std::env::remove_var("DEV_CLAW_CREDS_DIR");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn encrypt_handles_single_char() {
+        // Empty plaintext produces only 28 bytes (nonce+tag), below the 29-byte
+        // minimum enforced by decrypt. Use the smallest non-empty payload instead.
+        let key = test_key();
+        let enc = encrypt(&key, "x").unwrap();
+        let dec = decrypt(&key, &enc).unwrap();
+        assert_eq!(dec, "x");
+    }
+
+    #[test]
+    fn encrypt_handles_unicode_payload() {
+        let key = test_key();
+        let plain = "こんにちは — café — 🦀 Rust";
+        let enc = encrypt(&key, plain).unwrap();
+        let dec = decrypt(&key, &enc).unwrap();
+        assert_eq!(dec, plain);
+    }
+
+    #[test]
+    fn stored_providers_returns_sorted() {
+        // Create dummy .enc files directly — stored_providers() only lists filenames,
+        // it doesn't decrypt, so we avoid env-var/KEY_CACHE races from store().
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("openai.enc"), b"dummy").unwrap();
+        std::fs::write(d.path().join("anthropic.enc"), b"dummy").unwrap();
+        std::fs::write(d.path().join("groq.enc"), b"dummy").unwrap();
+
+        std::env::set_var("DEV_CLAW_CREDS_DIR", d.path());
+        let providers = stored_providers().unwrap();
+        std::env::remove_var("DEV_CLAW_CREDS_DIR");
+
+        assert_eq!(providers, vec!["anthropic", "groq", "openai"]);
+    }
+
+    #[test]
+    fn decrypt_29_byte_minimum_is_enforced() {
+        let result = decrypt(&test_key(), &[0u8; 28]);
+        assert!(result.is_err());
+        let msg = result.unwrap_err().to_string();
+        assert!(msg.contains("too short"));
+    }
 }

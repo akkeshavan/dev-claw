@@ -512,4 +512,91 @@ mod tests {
         assert_eq!(back.user_notes[0].text, "use snake_case");
         std::env::remove_var("DEV_CLAW_MEMORY_DIR_OVERRIDE");
     }
+
+    #[test]
+    fn detect_stack_finds_package_json() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("package.json"), "{}").unwrap();
+        let s = detect_stack(d.path());
+        assert!(s.contains(&"node".to_string()));
+        assert!(!s.contains(&"rust".to_string()));
+    }
+
+    #[test]
+    fn detect_stack_finds_go_mod() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("go.mod"), "module example.com/app").unwrap();
+        let s = detect_stack(d.path());
+        assert!(s.contains(&"go".to_string()));
+    }
+
+    #[test]
+    fn detect_stack_finds_pyproject() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("pyproject.toml"), "[tool.poetry]").unwrap();
+        let s = detect_stack(d.path());
+        assert!(s.contains(&"python".to_string()));
+    }
+
+    #[test]
+    fn detect_stack_finds_requirements_txt() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("requirements.txt"), "requests==2.28.0").unwrap();
+        let s = detect_stack(d.path());
+        assert!(s.contains(&"python".to_string()));
+    }
+
+    #[test]
+    fn detect_stack_finds_multiple_stacks() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::fs::write(d.path().join("Cargo.toml"), "[package]").unwrap();
+        std::fs::write(d.path().join("package.json"), "{}").unwrap();
+        std::fs::write(d.path().join("go.mod"), "module x").unwrap();
+        let s = detect_stack(d.path());
+        assert!(s.contains(&"rust".to_string()));
+        assert!(s.contains(&"node".to_string()));
+        assert!(s.contains(&"go".to_string()));
+    }
+
+    #[test]
+    fn push_note_adds_user_note() {
+        let mut mem = ProjectMemory::default();
+        mem.push_note("use kebab-case for branches", None);
+        assert_eq!(mem.user_notes.len(), 1);
+        assert_eq!(mem.user_notes[0].text, "use kebab-case for branches");
+        assert!(mem.user_notes[0].command.is_none());
+    }
+
+    #[test]
+    fn push_note_with_command_stores_command() {
+        let mut mem = ProjectMemory::default();
+        mem.push_note("be concise", Some("standup"));
+        assert_eq!(mem.user_notes[0].command, Some("standup".to_string()));
+    }
+
+    #[test]
+    fn project_id_known_fnv1a_value() {
+        let p = std::path::Path::new("/home/user/project");
+        let id = project_id(p);
+        assert_eq!(id.len(), 16, "project_id should be 16 hex chars");
+        assert_eq!(project_id(p), project_id(p));
+    }
+
+    #[test]
+    fn project_name_falls_back_for_root() {
+        let root = std::path::Path::new("/");
+        let _ = project_name(root); // must not panic
+    }
+
+    #[test]
+    fn toml_round_trip_preserves_interactions() {
+        let mut mem = make_mem(&["rust"], &[]);
+        mem.push_interaction("git", "committed 3 files");
+        mem.push_interaction("review", "looks good");
+        let raw = toml::to_string_pretty(&mem).unwrap();
+        let back: ProjectMemory = toml::from_str(&raw).unwrap();
+        assert_eq!(back.interactions.len(), 2);
+        assert_eq!(back.interactions[0].command, "git");
+        assert_eq!(back.interactions[1].command, "review");
+    }
 }

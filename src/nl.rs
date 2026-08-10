@@ -627,4 +627,110 @@ mod tests {
         assert!(all.contains("cloud_up"));
         assert!(all.contains("standup"));
     }
+
+    #[test]
+    fn tools_for_unknown_namespace_falls_back_to_top() {
+        let t = tools_for("nonexistent");
+        assert!(
+            t.contains("standup"),
+            "unknown namespace should fall back to TOP_TOOLS"
+        );
+    }
+
+    #[test]
+    fn tools_for_env_namespace() {
+        assert!(tools_for("env").contains("env_check"));
+        assert!(tools_for("env").contains("env_guard"));
+    }
+
+    #[test]
+    fn tools_for_workflow_namespace() {
+        assert!(tools_for("workflow").contains("workflow_run"));
+        assert!(tools_for("workflow").contains("workflow_ls"));
+    }
+
+    #[test]
+    fn tools_for_memory_namespace() {
+        assert!(tools_for("memory").contains("memory_note"));
+        assert!(tools_for("memory").contains("memory_ls"));
+    }
+
+    #[test]
+    fn tools_for_mock_namespace() {
+        assert!(tools_for("mock").contains("mock_gen"));
+        assert!(tools_for("mock").contains("mock_factory"));
+    }
+
+    #[test]
+    fn tools_for_forensic_namespace() {
+        assert!(tools_for("forensic").contains("forensic_explain"));
+        assert!(tools_for("forensic").contains("forensic_blame"));
+    }
+
+    #[test]
+    fn tools_for_cloud_namespace() {
+        assert!(tools_for("cloud").contains("cloud_up"));
+        assert!(tools_for("cloud").contains("cloud_down"));
+    }
+
+    #[test]
+    fn all_tools_contains_every_namespace() {
+        let all = all_tools();
+        for ns in &[
+            "env_check",
+            "workflow_run",
+            "memory_note",
+            "mock_gen",
+            "forensic_explain",
+            "cloud_up",
+            "standup",
+        ] {
+            assert!(all.contains(ns), "all_tools missing: {ns}");
+        }
+    }
+
+    #[test]
+    fn bool_arg_with_non_boolean_json_returns_default() {
+        let args = json!({"apply": "yes"});
+        assert!(bool_arg(&args, "apply", true));
+    }
+
+    #[test]
+    fn u32_arg_with_string_value_returns_default() {
+        let args = json!({"n": "five"});
+        assert_eq!(u32_arg(&args, "n", 3), 3);
+    }
+
+    #[test]
+    fn u32_arg_with_zero() {
+        let args = json!({"n": 0});
+        assert_eq!(u32_arg(&args, "n", 2), 0);
+    }
+
+    #[test]
+    fn str_arg_with_number_falls_back_to_default() {
+        let args = json!({"base": 42});
+        assert_eq!(str_arg(&args, "base", "main"), "main");
+    }
+
+    #[test]
+    fn opt_str_with_explicit_null_returns_none() {
+        let args = json!({"message": null});
+        assert_eq!(opt_str(&args, "message"), None);
+    }
+
+    #[test]
+    fn step_without_args_field_defaults_to_null() {
+        let raw = r#"[{"tool":"git_resolve","desc":"Resolve conflicts"}]"#;
+        let steps: Vec<Step> = serde_json::from_str(raw).unwrap();
+        assert_eq!(steps[0].tool, "git_resolve");
+        assert!(steps[0].args.is_null());
+    }
+
+    #[test]
+    fn planner_system_prompt_specifies_json_array_format() {
+        assert!(PLANNER_SYSTEM.contains("JSON array"));
+        assert!(PLANNER_SYSTEM.contains("tool"));
+        assert!(PLANNER_SYSTEM.contains("desc"));
+    }
 }

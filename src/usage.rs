@@ -200,4 +200,45 @@ mod tests {
         assert_eq!(t.count_this_month("git").unwrap(), 1);
         assert_eq!(t.count_total_this_month().unwrap(), 3);
     }
+
+    #[test]
+    fn check_and_record_returns_none_below_threshold() {
+        let t = tracker();
+        // limit=10, warn_at=80% → threshold=8; first 7 calls return None
+        for _ in 0..7 {
+            let w = t.check_and_record("git", 0, 10, 80).unwrap();
+            assert!(w.is_none(), "no warning expected below threshold");
+        }
+    }
+
+    #[test]
+    fn blocked_call_does_not_record() {
+        let t = tracker();
+        for _ in 0..3 {
+            t.check_and_record("git", 0, 3, 80).unwrap();
+        }
+        // This call should fail and NOT increment the count
+        let _ = t.check_and_record("git", 0, 3, 80);
+        assert_eq!(t.count_total_this_month().unwrap(), 3);
+    }
+
+    #[test]
+    fn zero_command_limit_means_unlimited_per_command() {
+        let t = tracker();
+        for _ in 0..100 {
+            t.check_and_record("doctor", 0, 0, 80).unwrap();
+        }
+        assert_eq!(t.count_this_month("doctor").unwrap(), 100);
+    }
+
+    #[test]
+    fn warn_at_100_percent_triggers_only_at_cap() {
+        let t = tracker();
+        // limit=5, warn_at=100% → threshold=5; first 4 calls produce no warn
+        for _ in 0..4 {
+            assert!(t.check_and_record("git", 0, 5, 100).unwrap().is_none());
+        }
+        let warn = t.check_and_record("git", 0, 5, 100).unwrap();
+        assert!(warn.is_some());
+    }
 }

@@ -198,4 +198,81 @@ max_log_lines        = 50
         assert!(cfg.usage.is_none());
         assert!(cfg.doctor.is_none());
     }
+
+    #[test]
+    fn workflow_definitions_parsed() {
+        let src = r#"
+[[workflows]]
+name = "pre-push"
+description = "Run before every push"
+steps = ["dev-claw env check", "dev-claw review diff --staged"]
+
+[[workflows]]
+name = "release"
+steps = ["dev-claw deps audit --triage", "dev-claw release cut"]
+"#;
+        let cfg: Config = toml::from_str(src).unwrap();
+        let wfs = cfg.workflows.unwrap();
+        assert_eq!(wfs.len(), 2);
+        assert_eq!(wfs[0].name, "pre-push");
+        assert_eq!(wfs[0].steps.len(), 2);
+        assert_eq!(wfs[1].name, "release");
+        assert!(wfs[1].description.is_none());
+    }
+
+    #[test]
+    fn git_config_keywords_parsed() {
+        let src = r#"
+[git]
+commit_style = "conventional"
+block_on_keywords = ["FIXME", "HACK", "XXX"]
+"#;
+        let cfg: Config = toml::from_str(src).unwrap();
+        let g = cfg.git.unwrap();
+        assert_eq!(g.commit_style.unwrap(), "conventional");
+        let kws = g.block_on_keywords.unwrap();
+        assert!(kws.contains(&"FIXME".to_string()));
+        assert!(kws.contains(&"HACK".to_string()));
+        assert!(kws.contains(&"XXX".to_string()));
+    }
+
+    #[test]
+    fn usage_limits_forensic_and_mock_defaults() {
+        let l = blank_limits();
+        assert_eq!(l.forensic_limit(), 50);
+        assert_eq!(l.mock_limit(), 30);
+        assert_eq!(l.cloud_limit(), 3);
+    }
+
+    #[test]
+    fn usage_limits_all_custom() {
+        let l = UsageLimits {
+            monthly_limit: Some(1000),
+            doctor_limit: Some(200),
+            git_limit: Some(100),
+            env_limit: Some(50),
+            forensic_limit: Some(75),
+            mock_limit: Some(60),
+            cloud_limit: Some(10),
+            warn_at_percent: Some(75),
+            reset_day: Some(15),
+        };
+        assert_eq!(l.monthly_limit(), 1000);
+        assert_eq!(l.forensic_limit(), 75);
+        assert_eq!(l.mock_limit(), 60);
+        assert_eq!(l.cloud_limit(), 10);
+        assert_eq!(l.warn_at_percent(), 75);
+    }
+
+    #[test]
+    fn workflow_def_serializes_round_trip() {
+        let wf = WorkflowDef {
+            name: "my-workflow".to_string(),
+            description: Some("test workflow".to_string()),
+            steps: vec!["step one".to_string(), "step two".to_string()],
+        };
+        let serialized = toml::to_string(&wf).unwrap();
+        assert!(serialized.contains("my-workflow"));
+        assert!(serialized.contains("step one"));
+    }
 }
