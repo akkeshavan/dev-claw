@@ -33,7 +33,7 @@
     </p>
     <div class="install-cmd">
       <span class="prompt">$</span>
-      <code>curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh</code>
+      <code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code>
     </div>
     <div class="hero-badges">
       <span class="badge badge-new">Natural Language</span>
@@ -56,7 +56,7 @@
     <div class="code-block">
       <div class="code-header">shell</div>
       <pre><code><span class="comment"># 1. Install</span>
-curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
+curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
 
 <span class="comment"># 2. Add an API key — pick any provider</span>
 dclaw config set-key --provider deepseek   <span class="comment"># cheapest</span>
@@ -710,7 +710,7 @@ dclaw git hook    <span class="comment"># runs automatically on every commit</sp
         <div class="code-block">
           <div class="code-header">GitHub Actions</div>
           <pre><code>- name: Install dclaw
-  run: curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
+  run: curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
 
 - name: Security audit
   env:
@@ -759,7 +759,7 @@ dclaw git "rebase last 5 commits to clean up the history"</code></pre>
         <h3>curl installer (recommended)</h3>
         <p>Auto-detects your OS and architecture. Verifies SHA-256 checksum before installing. Works on macOS and Linux.</p>
         <div class="code-block">
-          <pre><code>curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh</code></pre>
+          <pre><code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code></pre>
         </div>
         <p>To pin a version: <code>VERSION=v0.1.1 curl -fsSL ... | sh</code></p>
       </div>

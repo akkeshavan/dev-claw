@@ -26,7 +26,7 @@ Stop context-switching to do the non-coding parts of coding. dclaw brings AI int
 ### curl (recommended — macOS and Linux)
 
 ```sh
-curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
+curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
 ```
 
 Auto-detects your OS and architecture, verifies SHA-256, installs to `~/.local/bin`.
