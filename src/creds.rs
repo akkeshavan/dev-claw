@@ -45,7 +45,7 @@ static KEY_CACHE: Mutex<Option<[u8; 32]>> = Mutex::new(None);
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/// Encrypt `api_key` with the master passphrase and write to `~/dev-claw/creds/{provider}.enc`.
+/// Encrypt `api_key` with the master passphrase and write to `~/dclaw/creds/{provider}.enc`.
 pub fn store(provider: &str, api_key: &str) -> Result<()> {
     let is_new = !salt_path()?.exists();
     let key = get_or_derive_key(is_new)?;
@@ -74,7 +74,7 @@ fn restrict_file_permissions(_path: &std::path::Path) -> Result<()> {
 /// Resolution order:
 ///   1. Standard provider env var (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY)
 ///   2. Generic DEV_CLAW_API_KEY env var
-///   3. Encrypted credential store (~/.dev-claw/creds/{provider}.enc)
+///   3. Encrypted credential store (~/.dclaw/creds/{provider}.enc)
 pub fn load(provider: &str) -> Result<String> {
     if let Some(key) = env_key_for(provider) {
         return Ok(key);
@@ -104,7 +104,7 @@ fn load_from_store(provider: &str) -> Result<String> {
     if !path.exists() {
         bail!(
             "No API key found for '{provider}'.\n\
-             Set it with:  dev-claw config set-key --provider {provider}\n\
+             Set it with:  dclaw config set-key --provider {provider}\n\
              Or export:    export {}_API_KEY=<your-key>",
             provider.to_uppercase().replace('-', "_")
         );
@@ -159,7 +159,7 @@ pub fn creds_dir() -> Result<PathBuf> {
     } else {
         dirs::home_dir()
             .ok_or_else(|| anyhow::anyhow!("Cannot determine home directory"))?
-            .join("dev-claw")
+            .join("dclaw")
             .join("creds")
     };
     std::fs::create_dir_all(&base)?;

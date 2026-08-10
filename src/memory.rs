@@ -59,7 +59,7 @@ impl ProjectMemory {
         }
         let raw = std::fs::read_to_string(&path)?;
         let mut mem: Self = toml::from_str(&raw)
-            .map_err(|e| anyhow::anyhow!("Cannot parse .dev-claw/memory.toml: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("Cannot parse .dclaw/memory.toml: {e}"))?;
         if mem.stack.is_empty() {
             mem.stack = detect_stack(&project_root());
         }
@@ -217,7 +217,7 @@ pub fn clear_project() -> Result<()> {
     // directly avoids a TOCTOU inconsistency if cwd shifts between the two calls.
     let root = project_root();
     let pid = project_id(&root);
-    let path = root.join(".dev-claw").join("memory.toml");
+    let path = root.join(".dclaw").join("memory.toml");
     if path.exists() {
         std::fs::remove_file(&path)?;
     }
@@ -246,8 +246,8 @@ pub fn show() -> Result<()> {
 
     if mem.user_notes.is_empty() {
         println!("\nNo notes yet.");
-        println!("  Add one:      dev-claw memory note \"use kebab-case for branches\"");
-        println!("  Add feedback: dev-claw memory feedback --command standup \"be more concise\"");
+        println!("  Add one:      dclaw memory note \"use kebab-case for branches\"");
+        println!("  Add feedback: dclaw memory feedback --command standup \"be more concise\"");
     } else {
         println!("\nNotes ({}):", mem.user_notes.len());
         for n in &mem.user_notes {
@@ -304,7 +304,7 @@ fn project_root() -> std::path::PathBuf {
 }
 
 fn memory_dir() -> Result<std::path::PathBuf> {
-    Ok(project_root().join(".dev-claw"))
+    Ok(project_root().join(".dclaw"))
 }
 
 fn memory_file() -> Result<std::path::PathBuf> {
@@ -354,11 +354,11 @@ fn ensure_gitignored() {
     let root = project_root();
     let gi = root.join(".gitignore");
     // Use empty string if .gitignore doesn't exist — we'll create it below.
-    // Previously returned early on missing file, which left .dev-claw/ unignored.
+    // Previously returned early on missing file, which left .dclaw/ unignored.
     let content = std::fs::read_to_string(&gi).unwrap_or_default();
     if content
         .lines()
-        .any(|l| l.trim() == ".dev-claw" || l.trim() == ".dev-claw/")
+        .any(|l| l.trim() == ".dclaw" || l.trim() == ".dclaw/")
     {
         return;
     }
@@ -367,7 +367,7 @@ fn ensure_gitignored() {
     } else {
         "\n"
     };
-    let _ = std::fs::write(&gi, format!("{content}{sep}.dev-claw/\n"));
+    let _ = std::fs::write(&gi, format!("{content}{sep}.dclaw/\n"));
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

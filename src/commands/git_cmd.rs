@@ -12,15 +12,15 @@ pub enum GitAction {
     /// Scan staged diff for blocked keywords — safe to use as a pre-commit hook
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git check
-  dev-claw git hook   # install as pre-commit hook so this runs automatically")]
+  dclaw git check
+  dclaw git hook   # install as pre-commit hook so this runs automatically")]
     Check,
 
     /// Generate a conventional commit message from staged changes
     #[command(after_help = "\
 EXAMPLES:
-  git add -p && dev-claw git commit
-  dev-claw git commit --apply   # also runs git commit -m <message>")]
+  git add -p && dclaw git commit
+  dclaw git commit --apply   # also runs git commit -m <message>")]
     Commit {
         #[arg(long)]
         apply: bool,
@@ -29,10 +29,10 @@ EXAMPLES:
     /// Draft a structured PR description; optionally create it via gh CLI
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git pr                        # draft description only
-  dev-claw git pr --base develop         # diff against a different base
-  dev-claw git pr --create               # draft + push branch + gh pr create
-  dev-claw git pr --create --base develop")]
+  dclaw git pr                        # draft description only
+  dclaw git pr --base develop         # diff against a different base
+  dclaw git pr --create               # draft + push branch + gh pr create
+  dclaw git pr --create --base develop")]
     Pr {
         #[arg(long, default_value = "main")]
         base: String,
@@ -41,17 +41,17 @@ EXAMPLES:
         create: bool,
     },
 
-    /// Install dev-claw as a Git pre-commit hook
+    /// Install dclaw as a Git pre-commit hook
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git hook   # installs .git/hooks/pre-commit running `dev-claw git check`")]
+  dclaw git hook   # installs .git/hooks/pre-commit running `dclaw git check`")]
     Hook,
 
     /// Generate a branch name from a plain-English description
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git branch \"fix login timeout for oauth users\"
-  dev-claw git branch \"add dark mode toggle\" --apply   # also runs git checkout -b")]
+  dclaw git branch \"fix login timeout for oauth users\"
+  dclaw git branch \"add dark mode toggle\" --apply   # also runs git checkout -b")]
     Branch {
         /// Plain-English description of the branch's purpose
         description: String,
@@ -63,9 +63,9 @@ EXAMPLES:
     /// Squash the last N commits into one with an AI-generated message
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git squash 3          # preview squashed message for last 3 commits
-  dev-claw git squash 3 --apply  # actually squash (git reset --soft HEAD~3 + commit)
-  dev-claw git squash            # defaults to last 2 commits")]
+  dclaw git squash 3          # preview squashed message for last 3 commits
+  dclaw git squash 3 --apply  # actually squash (git reset --soft HEAD~3 + commit)
+  dclaw git squash            # defaults to last 2 commits")]
     Squash {
         /// Number of commits to squash (default: 2)
         #[arg(default_value = "2")]
@@ -78,8 +78,8 @@ EXAMPLES:
     /// Smart push — sets upstream if missing, guards secrets, optional force
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git push                   # push current branch, set upstream if needed
-  dev-claw git push --force           # push with --force-with-lease (safer force)")]
+  dclaw git push                   # push current branch, set upstream if needed
+  dclaw git push --force           # push with --force-with-lease (safer force)")]
     Push {
         /// Use --force-with-lease (prompts for confirmation)
         #[arg(long)]
@@ -90,15 +90,15 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
   git merge feature/x     # produces conflicts
-  dev-claw git resolve    # resolves each conflict with AI suggestion + confirmation
+  dclaw git resolve    # resolves each conflict with AI suggestion + confirmation
   git merge --continue    # or git rebase --continue after resolve")]
     Resolve,
 
     /// Fetch origin and rebase the current branch onto origin/<base>
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git sync                    # fetch + rebase onto origin/main
-  dev-claw git sync --base develop     # rebase onto origin/develop")]
+  dclaw git sync                    # fetch + rebase onto origin/main
+  dclaw git sync --base develop     # rebase onto origin/develop")]
     Sync {
         #[arg(long, default_value = "main")]
         base: String,
@@ -107,10 +107,10 @@ EXAMPLES:
     /// AI narrative summary of recent commits
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git log                          # summarise commits from the last week
-  dev-claw git log --since \"2 days ago\"
-  dev-claw git log --since v1.2.0           # since a tag
-  dev-claw git log --format slack           # emoji bullets for Slack")]
+  dclaw git log                          # summarise commits from the last week
+  dclaw git log --since \"2 days ago\"
+  dclaw git log --since v1.2.0           # since a tag
+  dclaw git log --format slack           # emoji bullets for Slack")]
     Log {
         /// How far back to look (e.g. \"yesterday\", \"2 days ago\", tag name like \"v1.2.0\")
         #[arg(long, default_value = "1 week ago")]
@@ -123,7 +123,7 @@ EXAMPLES:
     /// Generate an AI interactive-rebase plan for the last N commits
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git rebase 5    # plan for HEAD~5..HEAD; launches git rebase -i automatically")]
+  dclaw git rebase 5    # plan for HEAD~5..HEAD; launches git rebase -i automatically")]
     Rebase {
         /// Number of commits to include in the rebase plan
         #[arg(value_name = "N")]
@@ -133,8 +133,8 @@ EXAMPLES:
     /// Stash current changes with an AI-generated description
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git stash                          # AI-generated stash message
-  dev-claw git stash --message \"WIP: auth\"   # provide your own message")]
+  dclaw git stash                          # AI-generated stash message
+  dclaw git stash --message \"WIP: auth\"   # provide your own message")]
     Stash {
         /// Provide a custom stash message instead of generating one
         #[arg(long)]
@@ -144,14 +144,14 @@ EXAMPLES:
     /// Cherry-pick a commit; resolves conflicts with AI if they arise
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw git cherry-pick abc1234
-  dev-claw git cherry-pick abc1234   # conflicts? AI resolves them automatically")]
+  dclaw git cherry-pick abc1234
+  dclaw git cherry-pick abc1234   # conflicts? AI resolves them automatically")]
     CherryPick {
         /// SHA of the commit to cherry-pick
         #[arg(value_name = "SHA")]
         sha: String,
     },
-    /// Natural language query — dev-claw git "<what you want to do>"
+    /// Natural language query — dclaw git "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -442,7 +442,7 @@ async fn run_commit(cfg: &Config, apply: bool) -> Result<()> {
         git_commit(&message)?;
         println!("✓  Committed.");
     } else {
-        println!("  To apply:  dev-claw git commit --apply");
+        println!("  To apply:  dclaw git commit --apply");
     }
 
     print_warning(warning);
@@ -524,7 +524,7 @@ async fn run_branch(cfg: &Config, description: &str, apply: bool) -> Result<()> 
         println!("✓  Created and switched to '{name}'.");
     } else {
         println!("  To create:  git checkout -b {name}");
-        println!("  Or:         dev-claw git branch --apply \"{description}\"");
+        println!("  Or:         dclaw git branch --apply \"{description}\"");
     }
 
     print_warning(warning);
@@ -557,7 +557,7 @@ async fn run_squash(cfg: &Config, n: u32, apply: bool) -> Result<()> {
         git_commit(&message)?;
         println!("✓  Squashed {n} commits.");
     } else {
-        println!("  To apply:  dev-claw git squash {n} --apply");
+        println!("  To apply:  dclaw git squash {n} --apply");
     }
 
     print_warning(warning);
@@ -752,8 +752,8 @@ async fn run_rebase(cfg: &Config, n: u32) -> Result<()> {
 fn launch_rebase_with_plan(plan: &str, n: u32) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
     let tmp = std::env::temp_dir();
-    let todo = tmp.join("dev-claw-rebase-todo.txt");
-    let editor = tmp.join("dev-claw-rebase-editor.sh");
+    let todo = tmp.join("dclaw-rebase-todo.txt");
+    let editor = tmp.join("dclaw-rebase-editor.sh");
 
     std::fs::write(&todo, plan)?;
     std::fs::write(
@@ -779,7 +779,7 @@ fn launch_rebase_with_plan(plan: &str, n: u32) -> Result<()> {
 
 #[cfg(not(unix))]
 fn launch_rebase_with_plan(plan: &str, n: u32) -> Result<()> {
-    let todo = std::env::temp_dir().join("dev-claw-rebase-todo.txt");
+    let todo = std::env::temp_dir().join("dclaw-rebase-todo.txt");
     std::fs::write(&todo, plan)?;
     println!("Todo saved to: {}", todo.display());
     println!("Run:  git rebase -i HEAD~{n}");
@@ -939,12 +939,12 @@ fn install_hook(hook_path: &Path) -> Result<()> {
             hook_path.display()
         );
     }
-    let script = "#!/bin/sh\ndev-claw git check\n";
+    let script = "#!/bin/sh\ndclaw git check\n";
     std::fs::write(hook_path, script)
         .with_context(|| format!("Cannot write {}", hook_path.display()))?;
     set_executable(hook_path)?;
     println!("✓  Installed: {}", hook_path.display());
-    println!("   Runs `dev-claw git check` before every commit.");
+    println!("   Runs `dclaw git check` before every commit.");
     Ok(())
 }
 
@@ -1069,9 +1069,7 @@ fn resolve_provider() -> Result<String> {
         .ok()
         .or_else(creds::auto_detect_provider)
         .ok_or_else(|| {
-            anyhow::anyhow!(
-                "No API key configured.\nRun: dev-claw config set-key --provider deepseek"
-            )
+            anyhow::anyhow!("No API key configured.\nRun: dclaw config set-key --provider deepseek")
         })
 }
 
@@ -1435,7 +1433,7 @@ d
         install_hook(&path).unwrap();
         let content = fs::read_to_string(&path).unwrap();
         assert!(content.starts_with("#!/bin/sh"));
-        assert!(content.contains("dev-claw git check"));
+        assert!(content.contains("dclaw git check"));
     }
 
     #[test]

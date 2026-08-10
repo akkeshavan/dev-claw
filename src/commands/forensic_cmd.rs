@@ -24,7 +24,7 @@ pub enum ForensicAction {
         #[arg(long, value_name = "START-END")]
         lines: Option<String>,
     },
-    /// Natural language query — dev-claw forensic "<what you want to know>"
+    /// Natural language query — dclaw forensic "<what you want to know>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -219,9 +219,7 @@ fn resolve_provider() -> Result<String> {
         return Ok(p);
     }
     creds::auto_detect_provider().ok_or_else(|| {
-        anyhow::anyhow!(
-            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-        )
+        anyhow::anyhow!("No API provider configured. Run: dclaw config set-key --provider deepseek")
     })
 }
 

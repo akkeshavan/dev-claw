@@ -27,11 +27,11 @@ pub enum CloudAction {
         #[arg(long)]
         name: Option<String>,
     },
-    /// List VMs provisioned by dev-claw
+    /// List VMs provisioned by dclaw
     Ls,
     /// Destroy a VM by name or local ID
     Down {
-        /// VM name or local ID shown by `dev-claw cloud ls`
+        /// VM name or local ID shown by `dclaw cloud ls`
         vm: String,
     },
     /// Print the SSH command for a VM
@@ -39,7 +39,7 @@ pub enum CloudAction {
         /// VM name or local ID
         vm: String,
     },
-    /// Natural language query — dev-claw cloud "<what you want to do>"
+    /// Natural language query — dclaw cloud "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -347,7 +347,7 @@ fn check_vm_limit(db: &CloudDb, cfg: &Config) -> Result<()> {
     if current >= limit {
         bail!(
             "VM limit reached ({current}/{limit}). \
-             Destroy one with `dev-claw cloud down <name>` \
+             Destroy one with `dclaw cloud down <name>` \
              or set cloud_limit in .devclawrc"
         );
     }
@@ -358,7 +358,7 @@ fn load_cloud_token(provider: &Provider) -> Result<String> {
     let key_name = provider.keychain_name();
     creds::load(key_name).map_err(|_| {
         anyhow::anyhow!(
-            "No API token for this provider. Run: dev-claw config set-key --provider {key_name}"
+            "No API token for this provider. Run: dclaw config set-key --provider {key_name}"
         )
     })
 }
@@ -371,9 +371,9 @@ fn print_provisioned(local_id: i64, r: &VmRecord, ssh_user: &str) {
     println!("   Size / Region: {} / {}", r.size, r.region);
     println!();
     println!("   Ready in ~30s. Connect with:");
-    println!("   dev-claw cloud ssh {local_id}   # or: ssh {ssh_user}@{ip_msg}");
+    println!("   dclaw cloud ssh {local_id}   # or: ssh {ssh_user}@{ip_msg}");
     println!();
-    println!("   To destroy: dev-claw cloud down {local_id}");
+    println!("   To destroy: dclaw cloud down {local_id}");
 }
 
 // ── Ls subcommand ─────────────────────────────────────────────────────────────
@@ -382,7 +382,7 @@ fn ls() -> Result<()> {
     let db = CloudDb::open()?;
     let vms = db.list()?;
     if vms.is_empty() {
-        println!("No VMs provisioned. Run `dev-claw cloud up` to create one.");
+        println!("No VMs provisioned. Run `dclaw cloud up` to create one.");
         return Ok(());
     }
     println!(
@@ -405,7 +405,7 @@ async fn down(vm: &str) -> Result<()> {
     let db = CloudDb::open()?;
     let record = db
         .find(vm)?
-        .ok_or_else(|| anyhow::anyhow!("VM `{vm}` not found. Run `dev-claw cloud ls`"))?;
+        .ok_or_else(|| anyhow::anyhow!("VM `{vm}` not found. Run `dclaw cloud ls`"))?;
     if !utils::confirm(&format!(
         "Permanently destroy VM `{}` ({})? This cannot be undone. [y/N] ",
         record.name, record.provider
@@ -435,7 +435,7 @@ fn ssh(vm: &str) -> Result<()> {
     let db = CloudDb::open()?;
     let record = db
         .find(vm)?
-        .ok_or_else(|| anyhow::anyhow!("VM `{vm}` not found. Run `dev-claw cloud ls`"))?;
+        .ok_or_else(|| anyhow::anyhow!("VM `{vm}` not found. Run `dclaw cloud ls`"))?;
     let ip = record.ip.as_deref().ok_or_else(|| {
         anyhow::anyhow!(
             "`{}` has no IP yet — still provisioning. Retry in ~30s.",
@@ -538,7 +538,7 @@ fn provision_aws(spec: &VmSpec) -> Result<(String, Option<String>)> {
         "ResourceType": "instance",
         "Tags": [
             {"Key": "Name",      "Value": spec.name},
-            {"Key": "CreatedBy", "Value": "dev-claw"},
+            {"Key": "CreatedBy", "Value": "dclaw"},
         ]
     }])
     .to_string();
@@ -609,7 +609,7 @@ fn provision_azure(spec: &VmSpec) -> Result<(String, Option<String>)> {
             "vm",
             "create",
             "--resource-group",
-            "dev-claw-rg",
+            "dclaw-rg",
             "--name",
             &spec.name,
             "--image",
@@ -637,7 +637,7 @@ fn provision_azure(spec: &VmSpec) -> Result<(String, Option<String>)> {
         .as_str()
         .filter(|s| !s.is_empty())
         .map(String::from);
-    Ok((format!("dev-claw-rg/{}", spec.name), ip))
+    Ok((format!("dclaw-rg/{}", spec.name), ip))
 }
 
 fn ensure_azure_resource_group(location: &str) -> Result<()> {
@@ -646,7 +646,7 @@ fn ensure_azure_resource_group(location: &str) -> Result<()> {
             "group",
             "create",
             "--name",
-            "dev-claw-rg",
+            "dclaw-rg",
             "--location",
             location,
             "--output",
@@ -707,7 +707,7 @@ fn provision_gcp(spec: &VmSpec) -> Result<(String, Option<String>)> {
             "--image-project",
             &img_project,
             "--labels",
-            "created-by=dev-claw",
+            "created-by=dclaw",
             "--format",
             "json",
         ])

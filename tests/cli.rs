@@ -3,7 +3,7 @@
 use assert_cmd::Command;
 
 fn dev_claw() -> Command {
-    Command::cargo_bin("dev-claw").expect("binary not found")
+    Command::cargo_bin("dclaw").expect("binary not found")
 }
 
 #[test]

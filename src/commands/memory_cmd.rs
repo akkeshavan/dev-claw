@@ -34,7 +34,7 @@ pub enum MemoryAction {
         #[arg(long)]
         all: bool,
     },
-    /// Natural language query — dev-claw memory "<what you want to do>"
+    /// Natural language query — dclaw memory "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }

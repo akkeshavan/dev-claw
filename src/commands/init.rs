@@ -106,7 +106,7 @@ pub async fn run() -> Result<()> {
     println!("✓  Created  : .devclawrc");
     println!();
     println!("   Edit .devclawrc to tune coding standards and quota limits.");
-    println!("   Next: dev-claw config set-key --provider deepseek");
+    println!("   Next: dclaw config set-key --provider deepseek");
     Ok(())
 }
 

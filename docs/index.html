@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>dev-claw — AI-powered SDLC automation</title>
+  <title>dclaw — AI-powered SDLC automation</title>
   <meta name="description" content="Open-source CLI daemon that brings AI into every phase of your development workflow. Natural language interface, BYOK, 8+ LLM providers.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav class="navbar">
-  <a href="#" class="nav-brand">dev-claw</a>
+  <a href="#" class="nav-brand">dclaw</a>
   <ul class="nav-links">
     <li><a href="#natural-language">Natural Language</a></li>
     <li><a href="#features">Commands</a></li>
@@ -24,7 +24,7 @@
 
 <header class="hero">
   <div class="hero-inner">
-    <span class="hero-title">dev-claw</span>
+    <span class="hero-title">dclaw</span>
     <p class="tagline">AI-powered SDLC automation for the terminal</p>
     <p class="sub-tagline">
       Type what you want in plain English — or use structured commands.
@@ -33,7 +33,7 @@
     </p>
     <div class="install-cmd">
       <span class="prompt">$</span>
-      <code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code>
+      <code>curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh</code>
     </div>
     <div class="hero-badges">
       <span class="badge badge-new">Natural Language</span>
@@ -56,21 +56,21 @@
     <div class="code-block">
       <div class="code-header">shell</div>
       <pre><code><span class="comment"># 1. Install</span>
-curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
+curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
 
 <span class="comment"># 2. Add an API key — pick any provider</span>
-dev-claw config set-key --provider deepseek   <span class="comment"># cheapest</span>
-dev-claw config set-key --provider openai     <span class="comment"># most capable</span>
-dev-claw config set-key --provider ollama     <span class="comment"># local, no key needed</span>
+dclaw config set-key --provider deepseek   <span class="comment"># cheapest</span>
+dclaw config set-key --provider openai     <span class="comment"># most capable</span>
+dclaw config set-key --provider ollama     <span class="comment"># local, no key needed</span>
 
 <span class="comment"># 3. Start automating — structured commands...</span>
-cargo build 2&gt;&amp;1 | dev-claw doctor   <span class="comment"># diagnose a build error</span>
-dev-claw git commit                   <span class="comment"># AI-written commit message</span>
-dev-claw standup                      <span class="comment"># today's standup from git</span>
+cargo build 2&gt;&amp;1 | dclaw doctor   <span class="comment"># diagnose a build error</span>
+dclaw git commit                   <span class="comment"># AI-written commit message</span>
+dclaw standup                      <span class="comment"># today's standup from git</span>
 
 <span class="comment"># ...or just say what you want</span>
-dev-claw git "squash last 3 commits and open a PR"
-dev-claw "review staged changes and if clean commit and push"</code></pre>
+dclaw git "squash last 3 commits and open a PR"
+dclaw "review staged changes and if clean commit and push"</code></pre>
     </div>
   </div>
 </section>
@@ -83,7 +83,7 @@ dev-claw "review staged changes and if clean commit and push"</code></pre>
       <span class="nl-eyebrow-text">Natural Language Interface</span>
     </div>
     <h2>Just describe what you want</h2>
-    <p class="section-sub">dev-claw maps your intent to the right tool sequence, shows you the plan, and waits for your confirmation before running anything.</p>
+    <p class="section-sub">dclaw maps your intent to the right tool sequence, shows you the plan, and waits for your confirmation before running anything.</p>
 
     <div class="nl-modes">
       <div class="nl-mode-card nl-mode-scoped">
@@ -95,23 +95,23 @@ dev-claw "review staged changes and if clean commit and push"</code></pre>
         <div class="nl-examples">
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw git "squash last 3 commits and open a PR"</code>
+            <code>dclaw git "squash last 3 commits and open a PR"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw git "sync with main and resolve any conflicts"</code>
+            <code>dclaw git "sync with main and resolve any conflicts"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw review "check staged changes for security issues"</code>
+            <code>dclaw review "check staged changes for security issues"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw deps "audit and triage anything critical"</code>
+            <code>dclaw deps "audit and triage anything critical"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw release "draft notes and cut v2.0.0"</code>
+            <code>dclaw release "draft notes and cut v2.0.0"</code>
           </div>
         </div>
       </div>
@@ -125,15 +125,15 @@ dev-claw "review staged changes and if clean commit and push"</code></pre>
         <div class="nl-examples">
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw "review staged changes and if clean commit and push"</code>
+            <code>dclaw "review staged changes and if clean commit and push"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw "sync with main, resolve conflicts, then push"</code>
+            <code>dclaw "sync with main, resolve conflicts, then push"</code>
           </div>
           <div class="nl-example">
             <span class="nl-prompt">$</span>
-            <code>dev-claw "audit deps, draft release notes, and cut v1.5.0"</code>
+            <code>dclaw "audit deps, draft release notes, and cut v1.5.0"</code>
           </div>
         </div>
         <div class="nl-cost-note">
@@ -192,11 +192,11 @@ dev-claw "review staged changes and if clean commit and push"</code></pre>
       <h3>Debugging</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw doctor</code>
+          <code class="cmd-name">dclaw doctor</code>
           <p>Pipe any build log, compiler error, or crash dump and get a one-shot root cause + fix. No preamble, no filler — just the diagnosis.</p>
-          <pre class="cmd-example">cargo build 2&gt;&amp;1 | dev-claw doctor
-npm run build 2&gt;&amp;1 | dev-claw doctor
-cat ci-failure.log | dev-claw doctor</pre>
+          <pre class="cmd-example">cargo build 2&gt;&amp;1 | dclaw doctor
+npm run build 2&gt;&amp;1 | dclaw doctor
+cat ci-failure.log | dclaw doctor</pre>
         </div>
       </div>
     </div>
@@ -205,74 +205,74 @@ cat ci-failure.log | dev-claw doctor</pre>
       <h3>Git</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git commit</code>
+          <code class="cmd-name">dclaw git commit</code>
           <p>Generate a conventional commit message from your staged diff. Reads context from project memory to stay consistent with your style.</p>
-          <pre class="cmd-example">git add -p &amp;&amp; dev-claw git commit</pre>
+          <pre class="cmd-example">git add -p &amp;&amp; dclaw git commit</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git branch</code>
+          <code class="cmd-name">dclaw git branch</code>
           <p>Generate a branch name from a plain-English description. Use <code>--apply</code> to immediately run <code>git checkout -b</code>.</p>
-          <pre class="cmd-example">dev-claw git branch "add dark mode toggle"
-dev-claw git branch "fix login timeout" --apply</pre>
+          <pre class="cmd-example">dclaw git branch "add dark mode toggle"
+dclaw git branch "fix login timeout" --apply</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git squash</code>
+          <code class="cmd-name">dclaw git squash</code>
           <p>Squash the last N commits into one with an AI-generated message. Preview first, then pass <code>--apply</code> to run the reset and commit.</p>
-          <pre class="cmd-example">dev-claw git squash 3
-dev-claw git squash 3 --apply</pre>
+          <pre class="cmd-example">dclaw git squash 3
+dclaw git squash 3 --apply</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git push</code>
+          <code class="cmd-name">dclaw git push</code>
           <p>Smart push that sets upstream if missing, guards for leaked secrets, and supports force-push with <code>--force-with-lease</code> — safer than bare <code>--force</code>.</p>
-          <pre class="cmd-example">dev-claw git push
-dev-claw git push --force</pre>
+          <pre class="cmd-example">dclaw git push
+dclaw git push --force</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git pr</code>
+          <code class="cmd-name">dclaw git pr</code>
           <p>Draft a pull request description from commits on your branch. Add <code>--create</code> to push the branch and open the PR via the <code>gh</code> CLI in one shot.</p>
-          <pre class="cmd-example">dev-claw git pr
-dev-claw git pr --create
-dev-claw git pr --create --base develop</pre>
+          <pre class="cmd-example">dclaw git pr
+dclaw git pr --create
+dclaw git pr --create --base develop</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git resolve</code>
+          <code class="cmd-name">dclaw git resolve</code>
           <p>AI-assisted merge conflict resolution. Shows each conflict with both sides, suggests a resolution, and confirms before writing to disk.</p>
           <pre class="cmd-example">git merge feature/x    <span class="comment"># produces conflicts</span>
-dev-claw git resolve   <span class="comment"># resolve each with AI</span></pre>
+dclaw git resolve   <span class="comment"># resolve each with AI</span></pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git sync</code>
+          <code class="cmd-name">dclaw git sync</code>
           <p>Fetch origin and rebase the current branch onto <code>origin/&lt;base&gt;</code>. Automatically resolves any conflicts that arise during the rebase.</p>
-          <pre class="cmd-example">dev-claw git sync
-dev-claw git sync --base develop</pre>
+          <pre class="cmd-example">dclaw git sync
+dclaw git sync --base develop</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git log</code>
+          <code class="cmd-name">dclaw git log</code>
           <p>AI narrative summary of recent commits. Choose a plain, Slack-formatted, or Markdown output for different audiences.</p>
-          <pre class="cmd-example">dev-claw git log --since "2 days ago"
-dev-claw git log --since v1.2.0 --format slack</pre>
+          <pre class="cmd-example">dclaw git log --since "2 days ago"
+dclaw git log --since v1.2.0 --format slack</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git rebase</code>
+          <code class="cmd-name">dclaw git rebase</code>
           <p>AI interactive-rebase plan for the last N commits. Writes the todo list, launches <code>git rebase -i</code> with the plan already filled in.</p>
-          <pre class="cmd-example">dev-claw git rebase 5</pre>
+          <pre class="cmd-example">dclaw git rebase 5</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git stash</code>
+          <code class="cmd-name">dclaw git stash</code>
           <p>Stash changes with an AI-generated description, or pass your own message. Cleaner than <code>git stash</code> with no message.</p>
-          <pre class="cmd-example">dev-claw git stash
-dev-claw git stash --message "WIP: auth refactor"</pre>
+          <pre class="cmd-example">dclaw git stash
+dclaw git stash --message "WIP: auth refactor"</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git cherry-pick</code>
-          <p>Cherry-pick a commit by SHA. If conflicts arise, dev-claw resolves them with AI the same way <code>resolve</code> does.</p>
-          <pre class="cmd-example">dev-claw git cherry-pick abc1234</pre>
+          <code class="cmd-name">dclaw git cherry-pick</code>
+          <p>Cherry-pick a commit by SHA. If conflicts arise, dclaw resolves them with AI the same way <code>resolve</code> does.</p>
+          <pre class="cmd-example">dclaw git cherry-pick abc1234</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw git check / hook</code>
+          <code class="cmd-name">dclaw git check / hook</code>
           <p>Scan staged changes for blocked keywords before committing. <code>hook</code> installs this as a git pre-commit hook so it runs automatically.</p>
-          <pre class="cmd-example">dev-claw git check
-dev-claw git hook</pre>
+          <pre class="cmd-example">dclaw git check
+dclaw git hook</pre>
         </div>
       </div>
     </div>
@@ -281,16 +281,16 @@ dev-claw git hook</pre>
       <h3>Code Review</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw review diff</code>
+          <code class="cmd-name">dclaw review diff</code>
           <p>Review staged or unstaged changes before committing. Focus on security, performance, or style with <code>--focus</code>.</p>
-          <pre class="cmd-example">dev-claw review diff --staged
-dev-claw review diff --focus security</pre>
+          <pre class="cmd-example">dclaw review diff --staged
+dclaw review diff --focus security</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw review pr</code>
+          <code class="cmd-name">dclaw review pr</code>
           <p>Review a GitHub PR by number. Fetches the full diff and provides structured feedback from your configured LLM.</p>
-          <pre class="cmd-example">dev-claw review pr 142
-dev-claw review pr 142 --focus style</pre>
+          <pre class="cmd-example">dclaw review pr 142
+dclaw review pr 142 --focus style</pre>
         </div>
       </div>
     </div>
@@ -299,15 +299,15 @@ dev-claw review pr 142 --focus style</pre>
       <h3>Code Intelligence</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw forensic explain</code>
+          <code class="cmd-name">dclaw forensic explain</code>
           <p>Explain what a file does using its full git history, blame data, and source. Answers "why does this exist?" for inherited code.</p>
-          <pre class="cmd-example">dev-claw forensic explain src/auth.rs
-dev-claw forensic explain src/auth.rs --lines 40-80</pre>
+          <pre class="cmd-example">dclaw forensic explain src/auth.rs
+dclaw forensic explain src/auth.rs --lines 40-80</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw forensic blame</code>
+          <code class="cmd-name">dclaw forensic blame</code>
           <p>Trace why a specific line of code exists — which commit introduced it and what problem it was solving at the time.</p>
-          <pre class="cmd-example">dev-claw forensic blame src/api.rs:87</pre>
+          <pre class="cmd-example">dclaw forensic blame src/api.rs:87</pre>
         </div>
       </div>
     </div>
@@ -316,19 +316,19 @@ dev-claw forensic explain src/auth.rs --lines 40-80</pre>
       <h3>Environment &amp; Security</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw env check</code>
+          <code class="cmd-name">dclaw env check</code>
           <p>Diff <code>.env</code> against <code>.env.example</code> — report missing, empty, or extra keys. Catches config drift before it reaches production.</p>
-          <pre class="cmd-example">dev-claw env check</pre>
+          <pre class="cmd-example">dclaw env check</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw env guard</code>
+          <code class="cmd-name">dclaw env guard</code>
           <p>Scan staged changes for secrets about to be committed. Blocks the commit if anything looks like an API key or password.</p>
-          <pre class="cmd-example">dev-claw env guard</pre>
+          <pre class="cmd-example">dclaw env guard</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw env hook</code>
+          <code class="cmd-name">dclaw env hook</code>
           <p>Install pre-commit (guard) and post-checkout (check) git hooks automatically — so env protection runs without thinking about it.</p>
-          <pre class="cmd-example">dev-claw env hook</pre>
+          <pre class="cmd-example">dclaw env hook</pre>
         </div>
       </div>
     </div>
@@ -337,15 +337,15 @@ dev-claw forensic explain src/auth.rs --lines 40-80</pre>
       <h3>Dependencies</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw deps audit</code>
+          <code class="cmd-name">dclaw deps audit</code>
           <p>Run security audits across all detected package managers (Cargo, npm, Go, pip) in one shot. Add <code>--triage</code> for an AI-ranked action list: fix now vs. later vs. ignore.</p>
-          <pre class="cmd-example">dev-claw deps audit
-dev-claw deps audit --triage</pre>
+          <pre class="cmd-example">dclaw deps audit
+dclaw deps audit --triage</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw deps outdated</code>
+          <code class="cmd-name">dclaw deps outdated</code>
           <p>Check for outdated dependencies across all detected package managers simultaneously — no switching tools per ecosystem.</p>
-          <pre class="cmd-example">dev-claw deps outdated</pre>
+          <pre class="cmd-example">dclaw deps outdated</pre>
         </div>
       </div>
     </div>
@@ -354,15 +354,15 @@ dev-claw deps audit --triage</pre>
       <h3>Test Data</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw mock gen</code>
+          <code class="cmd-name">dclaw mock gen</code>
           <p>Generate realistic fixture data from a type definition or schema. Outputs JSON, YAML, or SQL seed data ready for your test suite.</p>
-          <pre class="cmd-example">dev-claw mock gen schema.sql --count 20 --format sql
-dev-claw mock gen types.ts --format json --out fixtures.json</pre>
+          <pre class="cmd-example">dclaw mock gen schema.sql --count 20 --format sql
+dclaw mock gen types.ts --format json --out fixtures.json</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw mock factory</code>
+          <code class="cmd-name">dclaw mock factory</code>
           <p>Scaffold a factory function for a given type — correctly typed, ready to paste into your test helpers.</p>
-          <pre class="cmd-example">dev-claw mock factory src/types/user.ts --out src/__tests__/factories.ts</pre>
+          <pre class="cmd-example">dclaw mock factory src/types/user.ts --out src/__tests__/factories.ts</pre>
         </div>
       </div>
     </div>
@@ -371,21 +371,21 @@ dev-claw mock gen types.ts --format json --out fixtures.json</pre>
       <h3>Releases &amp; Standups</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw standup</code>
+          <code class="cmd-name">dclaw standup</code>
           <p>Generate daily standup bullet points from git history. Covers what you shipped, nothing more — no padding.</p>
-          <pre class="cmd-example">dev-claw standup --since yesterday
-dev-claw standup --since "last friday" --format slack</pre>
+          <pre class="cmd-example">dclaw standup --since yesterday
+dclaw standup --since "last friday" --format slack</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw release notes</code>
+          <code class="cmd-name">dclaw release notes</code>
           <p>Draft human-readable release notes from git commits since the last tag. Ready to paste into GitHub Releases.</p>
-          <pre class="cmd-example">dev-claw release notes
-dev-claw release notes --since v1.1.0</pre>
+          <pre class="cmd-example">dclaw release notes
+dclaw release notes --since v1.1.0</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw release cut</code>
+          <code class="cmd-name">dclaw release cut</code>
           <p>Write CHANGELOG.md and create an annotated git tag in one step. Prompts before anything is written to disk.</p>
-          <pre class="cmd-example">dev-claw release cut v1.2.0</pre>
+          <pre class="cmd-example">dclaw release cut v1.2.0</pre>
         </div>
       </div>
     </div>
@@ -394,12 +394,12 @@ dev-claw release notes --since v1.1.0</pre>
       <h3>Cloud VMs</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw cloud</code>
+          <code class="cmd-name">dclaw cloud</code>
           <p>Spin up and tear down ephemeral dev VMs across AWS, GCP, Azure, and Fly.io. Destroy requires explicit confirmation — nothing is deleted silently.</p>
-          <pre class="cmd-example">dev-claw cloud up --provider aws --size small
-dev-claw cloud ls
-dev-claw cloud ssh my-vm
-dev-claw cloud down my-vm</pre>
+          <pre class="cmd-example">dclaw cloud up --provider aws --size small
+dclaw cloud ls
+dclaw cloud ssh my-vm
+dclaw cloud down my-vm</pre>
         </div>
       </div>
     </div>
@@ -408,12 +408,12 @@ dev-claw cloud down my-vm</pre>
       <h3>Automation Workflows</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw workflow</code>
+          <code class="cmd-name">dclaw workflow</code>
           <p>Define multi-step automation in TOML, run it locally, and share via GitHub Gist. Shell-safe argument splitting, 50-step safety cap, no arbitrary remote execution.</p>
-          <pre class="cmd-example">dev-claw workflow ls
-dev-claw workflow run pre-push
-dev-claw workflow publish pre-push
-dev-claw workflow import gist:abc123def</pre>
+          <pre class="cmd-example">dclaw workflow ls
+dclaw workflow run pre-push
+dclaw workflow publish pre-push
+dclaw workflow import gist:abc123def</pre>
         </div>
       </div>
     </div>
@@ -422,18 +422,18 @@ dev-claw workflow import gist:abc123def</pre>
       <h3>Memory &amp; Config</h3>
       <div class="cmd-grid">
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw memory</code>
-          <p>Per-project memory that persists across sessions. dev-claw learns your stack and preferences, injecting context into every LLM call for better answers over time.</p>
-          <pre class="cmd-example">dev-claw memory note "using postgres 16, pgvector"
-dev-claw memory feedback "prefer short responses"
-dev-claw memory ls</pre>
+          <code class="cmd-name">dclaw memory</code>
+          <p>Per-project memory that persists across sessions. dclaw learns your stack and preferences, injecting context into every LLM call for better answers over time.</p>
+          <pre class="cmd-example">dclaw memory note "using postgres 16, pgvector"
+dclaw memory feedback "prefer short responses"
+dclaw memory ls</pre>
         </div>
         <div class="cmd-card">
-          <code class="cmd-name">dev-claw config / usage</code>
+          <code class="cmd-name">dclaw config / usage</code>
           <p>Manage API keys for all providers. Keys are encrypted with AES-256-GCM + Argon2id and stored only on your machine. Track token quota with <code>usage</code>.</p>
-          <pre class="cmd-example">dev-claw config set-key --provider anthropic
-dev-claw config list-keys
-dev-claw usage</pre>
+          <pre class="cmd-example">dclaw config set-key --provider anthropic
+dclaw config list-keys
+dclaw usage</pre>
         </div>
       </div>
     </div>
@@ -445,56 +445,56 @@ dev-claw usage</pre>
 <section class="section" id="use-cases">
   <div class="container">
     <h2>Use Cases</h2>
-    <p class="section-sub">How dev-claw fits into your actual day.</p>
+    <p class="section-sub">How dclaw fits into your actual day.</p>
     <div class="use-case-grid">
 
       <div class="use-case-card">
         <div class="uc-icon">🔍</div>
         <h3>Debug CI faster</h3>
         <p>Download the failing log and pipe it in. Get root cause + a copy-pasteable fix in under 10 seconds, no scrolling through 2,000 lines.</p>
-        <pre class="cmd-example">cat ci-failure.log | dev-claw doctor</pre>
+        <pre class="cmd-example">cat ci-failure.log | dclaw doctor</pre>
       </div>
 
       <div class="use-case-card">
         <div class="uc-icon">✍️</div>
         <h3>Commit without context-switching</h3>
-        <p>Stage your changes, let dev-claw write the message. Or just describe what you want and let the NL interface handle the rest.</p>
+        <p>Stage your changes, let dclaw write the message. Or just describe what you want and let the NL interface handle the rest.</p>
         <pre class="cmd-example">git add -p
-dev-claw git commit
+dclaw git commit
 <span class="comment"># or</span>
-dev-claw git "squash last 3 commits and push"</pre>
+dclaw git "squash last 3 commits and push"</pre>
       </div>
 
       <div class="use-case-card">
         <div class="uc-icon">☀️</div>
         <h3>Monday morning standup</h3>
-        <p>Never blank on what you shipped last week. dev-claw reads your git history and writes your standup points — just edit and send.</p>
-        <pre class="cmd-example">dev-claw standup --since "last friday"
-dev-claw standup --format slack</pre>
+        <p>Never blank on what you shipped last week. dclaw reads your git history and writes your standup points — just edit and send.</p>
+        <pre class="cmd-example">dclaw standup --since "last friday"
+dclaw standup --format slack</pre>
       </div>
 
       <div class="use-case-card">
         <div class="uc-icon">🔒</div>
         <h3>Pre-push safety check</h3>
         <p>Run the full gauntlet before pushing: env scan, staged diff review, and dependency audit — or let global NL chain it for you.</p>
-        <pre class="cmd-example">dev-claw env check \
-  &amp;&amp; dev-claw review diff --staged \
-  &amp;&amp; dev-claw deps audit</pre>
+        <pre class="cmd-example">dclaw env check \
+  &amp;&amp; dclaw review diff --staged \
+  &amp;&amp; dclaw deps audit</pre>
       </div>
 
       <div class="use-case-card">
         <div class="uc-icon">🧬</div>
         <h3>Understand inherited code</h3>
         <p>Dropped into an unfamiliar codebase? Explain a file's purpose from its full git history, then trace exactly why a suspicious line was added.</p>
-        <pre class="cmd-example">dev-claw forensic explain src/legacy.rs
-dev-claw forensic blame src/legacy.rs:204</pre>
+        <pre class="cmd-example">dclaw forensic explain src/legacy.rs
+dclaw forensic blame src/legacy.rs:204</pre>
       </div>
 
       <div class="use-case-card">
         <div class="uc-icon">🚀</div>
         <h3>Ship a release end-to-end</h3>
         <p>From security audit to changelog to signed tag — three commands, or one natural-language request, confirmation required before anything is written.</p>
-        <pre class="cmd-example">dev-claw release "audit deps, draft notes, and cut v2.0.0"</pre>
+        <pre class="cmd-example">dclaw release "audit deps, draft notes, and cut v2.0.0"</pre>
       </div>
 
     </div>
@@ -563,7 +563,7 @@ dev-claw forensic blame src/legacy.rs:204</pre>
         </tbody>
       </table>
     </div>
-    <p class="table-note">Keys are encrypted with AES-256-GCM + Argon2id and stored locally in <code>~/.dev-claw/credentials.enc</code> — never sent to any server other than your chosen provider.</p>
+    <p class="table-note">Keys are encrypted with AES-256-GCM + Argon2id and stored locally in <code>~/.dclaw/credentials.enc</code> — never sent to any server other than your chosen provider.</p>
   </div>
 </section>
 
@@ -583,23 +583,23 @@ dev-claw forensic blame src/legacy.rs:204</pre>
           <pre><code>[[workflows]]
 name  = "pre-push"
 steps = [
-  "dev-claw env check",
-  "dev-claw review diff --staged",
-  "dev-claw deps audit",
+  "dclaw env check",
+  "dclaw review diff --staged",
+  "dclaw deps audit",
 ]
 
 [[workflows]]
 name  = "ship"
 steps = [
-  "dev-claw deps audit --triage",
-  "dev-claw release notes",
-  "dev-claw release cut",
+  "dclaw deps audit --triage",
+  "dclaw release notes",
+  "dclaw release cut",
 ]</code></pre>
         </div>
-        <pre class="cmd-example">dev-claw workflow run pre-push
-dev-claw workflow run ship
-dev-claw workflow publish pre-push     <span class="comment"># → GitHub Gist</span>
-dev-claw workflow import gist:abc123  <span class="comment"># ← team member's gist</span></pre>
+        <pre class="cmd-example">dclaw workflow run pre-push
+dclaw workflow run ship
+dclaw workflow publish pre-push     <span class="comment"># → GitHub Gist</span>
+dclaw workflow import gist:abc123  <span class="comment"># ← team member's gist</span></pre>
       </div>
 
       <div class="power-card">
@@ -608,21 +608,21 @@ dev-claw workflow import gist:abc123  <span class="comment"># ← team member's 
         <div class="code-block">
           <div class="code-header">shell</div>
           <pre><code><span class="comment"># Full feature branch cycle</span>
-dev-claw git branch "add payment webhook" --apply
+dclaw git branch "add payment webhook" --apply
 git add -p
-dev-claw git commit
-dev-claw git push
-dev-claw git pr --create
+dclaw git commit
+dclaw git push
+dclaw git pr --create
 
 <span class="comment"># Tidy up before a review</span>
-dev-claw git squash 4 --apply
-dev-claw git push --force
+dclaw git squash 4 --apply
+dclaw git push --force
 
 <span class="comment"># Catch up with main</span>
-dev-claw git sync --base main
+dclaw git sync --base main
 
 <span class="comment"># Or just say it</span>
-dev-claw git "squash 4 commits, sync with main, and create a PR"</code></pre>
+dclaw git "squash 4 commits, sync with main, and create a PR"</code></pre>
         </div>
       </div>
 
@@ -636,41 +636,41 @@ export DEV_CLAW_PROVIDER=deepseek   <span class="comment"># cheapest</span>
 export DEV_CLAW_PROVIDER=groq       <span class="comment"># fastest</span>
 
 <span class="comment"># One-off with a different provider</span>
-DEV_CLAW_PROVIDER=anthropic dev-claw forensic explain src/core.rs
+DEV_CLAW_PROVIDER=anthropic dclaw forensic explain src/core.rs
 
 <span class="comment"># Use a generic key for all providers</span>
 export DEV_CLAW_API_KEY=sk-...
 
 <span class="comment"># Keep NL cheap: use scoped mode for single-domain work</span>
-dev-claw git "..."      <span class="comment"># ~150 tokens</span>
+dclaw git "..."      <span class="comment"># ~150 tokens</span>
 <span class="comment"># not:</span>
-dev-claw "..."          <span class="comment"># ~600 tokens — only for cross-domain</span></code></pre>
+dclaw "..."          <span class="comment"># ~600 tokens — only for cross-domain</span></code></pre>
         </div>
       </div>
 
       <div class="power-card">
         <h4>Persistent Project Memory</h4>
-        <p>Teach dev-claw about your project once. Notes and feedback are injected into every LLM prompt so you stop repeating context.</p>
+        <p>Teach dclaw about your project once. Notes and feedback are injected into every LLM prompt so you stop repeating context.</p>
         <div class="code-block">
           <div class="code-header">shell</div>
           <pre><code><span class="comment"># One-time setup for a new project</span>
-dev-claw memory note "postgres 16 with pgvector extension"
-dev-claw memory note "all API routes live in src/api/"
-dev-claw memory note "we use kebab-case for branch names"
+dclaw memory note "postgres 16 with pgvector extension"
+dclaw memory note "all API routes live in src/api/"
+dclaw memory note "we use kebab-case for branch names"
 
 <span class="comment"># Tune LLM output over time</span>
-dev-claw memory feedback "prefer concise responses" --command standup
-dev-claw memory feedback "always include file paths" --command review
+dclaw memory feedback "prefer concise responses" --command standup
+dclaw memory feedback "always include file paths" --command review
 
 <span class="comment"># Inspect what's stored</span>
-dev-claw memory ls</code></pre>
+dclaw memory ls</code></pre>
         </div>
-        <p class="power-note">Memory is stored in <code>.dev-claw/memory.toml</code> (gitignored automatically) and synced to a local SQLite database for cross-session access.</p>
+        <p class="power-note">Memory is stored in <code>.dclaw/memory.toml</code> (gitignored automatically) and synced to a local SQLite database for cross-session access.</p>
       </div>
 
       <div class="power-card">
         <h4>Monthly Quota Controls</h4>
-        <p>Set per-command and total monthly limits to keep free-tier usage in check. dev-claw warns before you hit the cap and blocks once you do.</p>
+        <p>Set per-command and total monthly limits to keep free-tier usage in check. dclaw warns before you hit the cap and blocks once you do.</p>
         <div class="code-block">
           <div class="code-header">.devclawrc</div>
           <pre><code>[usage]
@@ -682,7 +682,7 @@ mock_limit      = 30
 cloud_limit     = 3
 warn_at_percent = 80    <span class="comment"># warn when 80% used</span></code></pre>
         </div>
-        <pre class="cmd-example">dev-claw usage   <span class="comment"># see current month's breakdown</span></pre>
+        <pre class="cmd-example">dclaw usage   <span class="comment"># see current month's breakdown</span></pre>
       </div>
 
       <div class="power-card">
@@ -700,28 +700,28 @@ block_on_keywords = [
   "test-api-key",
 ]</code></pre>
         </div>
-        <pre class="cmd-example">dev-claw git check   <span class="comment"># scans staged diff for these patterns</span>
-dev-claw git hook    <span class="comment"># runs automatically on every commit</span></pre>
+        <pre class="cmd-example">dclaw git check   <span class="comment"># scans staged diff for these patterns</span>
+dclaw git hook    <span class="comment"># runs automatically on every commit</span></pre>
       </div>
 
       <div class="power-card">
         <h4>CI Integration</h4>
-        <p>Use dev-claw in CI pipelines for automated review, security audits, and release automation. Set credentials via environment variables — no passphrase prompt in non-interactive mode.</p>
+        <p>Use dclaw in CI pipelines for automated review, security audits, and release automation. Set credentials via environment variables — no passphrase prompt in non-interactive mode.</p>
         <div class="code-block">
           <div class="code-header">GitHub Actions</div>
-          <pre><code>- name: Install dev-claw
-  run: curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
+          <pre><code>- name: Install dclaw
+  run: curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
 
 - name: Security audit
   env:
     DEV_CLAW_API_KEY: ${{ secrets.DEEPSEEK_KEY }}
     DEV_CLAW_PROVIDER: deepseek
-  run: dev-claw deps audit --triage
+  run: dclaw deps audit --triage
 
 - name: Review PR diff
   env:
     DEV_CLAW_API_KEY: ${{ secrets.OPENAI_KEY }}
-  run: dev-claw review pr ${{ github.event.pull_request.number }}</code></pre>
+  run: dclaw review pr ${{ github.event.pull_request.number }}</code></pre>
         </div>
       </div>
 
@@ -731,16 +731,16 @@ dev-claw git hook    <span class="comment"># runs automatically on every commit<
         <div class="code-block">
           <div class="code-header">shell</div>
           <pre><code><span class="comment"># AI writes the rebase todo, launches git rebase -i</span>
-dev-claw git rebase 6
+dclaw git rebase 6
 
 <span class="comment"># Cherry-pick with automatic conflict resolution</span>
-dev-claw git cherry-pick abc1234
+dclaw git cherry-pick abc1234
 
 <span class="comment"># Full sync: fetch + rebase + resolve any conflicts</span>
-dev-claw git sync --base main
+dclaw git sync --base main
 
 <span class="comment"># Or just describe it</span>
-dev-claw git "rebase last 5 commits to clean up the history"</code></pre>
+dclaw git "rebase last 5 commits to clean up the history"</code></pre>
         </div>
       </div>
 
@@ -759,7 +759,7 @@ dev-claw git "rebase last 5 commits to clean up the history"</code></pre>
         <h3>curl installer (recommended)</h3>
         <p>Auto-detects your OS and architecture. Verifies SHA-256 checksum before installing. Works on macOS and Linux.</p>
         <div class="code-block">
-          <pre><code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code></pre>
+          <pre><code>curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh</code></pre>
         </div>
         <p>To pin a version: <code>VERSION=v0.1.1 curl -fsSL ... | sh</code></p>
       </div>
@@ -823,7 +823,7 @@ dev-claw git "rebase last 5 commits to clean up the history"</code></pre>
 <footer class="footer">
   <div class="container">
     <div class="footer-inner">
-      <span class="footer-brand">dev-claw</span>
+      <span class="footer-brand">dclaw</span>
       <span class="footer-sep">·</span>
       <a href="https://github.com/akkeshavan/dev-claw">GitHub</a>
       <span class="footer-sep">·</span>

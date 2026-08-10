@@ -30,7 +30,7 @@ pub enum ReviewAction {
         #[arg(long, default_value = "all")]
         focus: String,
     },
-    /// Natural language query — dev-claw review "<what you want to review>"
+    /// Natural language query — dclaw review "<what you want to review>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -187,9 +187,7 @@ fn resolve_provider() -> Result<String> {
         return Ok(p);
     }
     creds::auto_detect_provider().ok_or_else(|| {
-        anyhow::anyhow!(
-            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-        )
+        anyhow::anyhow!("No API provider configured. Run: dclaw config set-key --provider deepseek")
     })
 }
 

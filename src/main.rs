@@ -12,47 +12,47 @@ mod utils;
 
 #[derive(Parser)]
 #[command(
-    name = "dev-claw",
+    name = "dclaw",
     version,
     about = "AI-powered developer daemon — surgical SDLC automation",
     after_help = "\
 QUICK START:
-  dev-claw config set-key --provider deepseek   # store your API key (once)
-  cargo build 2>&1 | dev-claw doctor            # diagnose a build error
-  dev-claw git commit                           # AI commit message
-  dev-claw standup                              # today's standup from git
+  dclaw config set-key --provider deepseek   # store your API key (once)
+  cargo build 2>&1 | dclaw doctor            # diagnose a build error
+  dclaw git commit                           # AI commit message
+  dclaw standup                              # today's standup from git
 
 NATURAL LANGUAGE INTERFACE:
   # Scoped — cheaper (~150 tokens), single domain (recommended):
-  dev-claw git \"squash last 3 commits and open a PR\"
-  dev-claw review \"check staged changes for security issues\"
-  dev-claw deps \"audit and triage anything critical\"
-  dev-claw release \"draft notes and cut v2.0.0\"
+  dclaw git \"squash last 3 commits and open a PR\"
+  dclaw review \"check staged changes for security issues\"
+  dclaw deps \"audit and triage anything critical\"
+  dclaw release \"draft notes and cut v2.0.0\"
 
   # Global — more expensive (~600 tokens), for cross-domain workflows:
-  dev-claw \"review staged changes and if clean commit and push\"
-  dev-claw \"sync with main, resolve conflicts, then push\"
+  dclaw \"review staged changes and if clean commit and push\"
+  dclaw \"sync with main, resolve conflicts, then push\"
 
 COMMON WORKFLOWS (structured):
   # Before every push
-  dev-claw env check && dev-claw review diff --staged && dev-claw deps audit
+  dclaw env check && dclaw review diff --staged && dclaw deps audit
 
   # Release day
-  dev-claw deps audit --triage
-  dev-claw release notes
-  dev-claw release cut v1.2.0
+  dclaw deps audit --triage
+  dclaw release notes
+  dclaw release cut v1.2.0
 
   # Understand old code
-  dev-claw forensic explain src/legacy.rs
-  dev-claw forensic blame src/legacy.rs:87
+  dclaw forensic explain src/legacy.rs
+  dclaw forensic blame src/legacy.rs:87
 
 API KEY SETUP (pick any provider):
   export OPENAI_API_KEY=sk-...        # or set via config set-key
   export ANTHROPIC_API_KEY=sk-ant-...
   export DEEPSEEK_API_KEY=sk-...
-  dev-claw config set-key --provider deepseek   # encrypted local store
+  dclaw config set-key --provider deepseek   # encrypted local store
 
-Run 'dev-claw <COMMAND> --help' for examples specific to each command."
+Run 'dclaw <COMMAND> --help' for examples specific to each command."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -64,16 +64,16 @@ enum Command {
     /// Diagnose terminal errors — pipe your build stderr here
     #[command(after_help = "\
 EXAMPLES:
-  cargo build 2>&1 | dev-claw doctor
-  npm run build 2>&1 | dev-claw doctor
-  cat ci-failure.log | dev-claw doctor
-  pytest 2>&1 | dev-claw doctor")]
+  cargo build 2>&1 | dclaw doctor
+  npm run build 2>&1 | dclaw doctor
+  cat ci-failure.log | dclaw doctor
+  pytest 2>&1 | dclaw doctor")]
     Doctor,
 
     /// Auto-detect your stack and write a starter .devclawrc
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw init                 # detects Cargo.toml / package.json / go.mod
+  dclaw init                 # detects Cargo.toml / package.json / go.mod
   cat .devclawrc                # review the generated config")]
     Init,
 
@@ -92,20 +92,20 @@ SUBCOMMANDS:
   stash        Stash changes with an AI-generated description
   cherry-pick  Cherry-pick a commit; resolves conflicts with AI if needed
   check        Scan staged diff for blocked keywords
-  hook         Install dev-claw as a git pre-commit hook
+  hook         Install dclaw as a git pre-commit hook
 
 EXAMPLES:
-  git add -p && dev-claw git commit
-  dev-claw git branch \"add dark mode toggle\" --apply
-  dev-claw git squash 3 --apply
-  dev-claw git pr --create
-  dev-claw git push
-  dev-claw git resolve
-  dev-claw git sync
-  dev-claw git log --since \"2 days ago\"
-  dev-claw git rebase 5
-  dev-claw git stash
-  dev-claw git cherry-pick abc1234")]
+  git add -p && dclaw git commit
+  dclaw git branch \"add dark mode toggle\" --apply
+  dclaw git squash 3 --apply
+  dclaw git pr --create
+  dclaw git push
+  dclaw git resolve
+  dclaw git sync
+  dclaw git log --since \"2 days ago\"
+  dclaw git rebase 5
+  dclaw git stash
+  dclaw git cherry-pick abc1234")]
     Git {
         #[command(subcommand)]
         action: commands::git_cmd::GitAction,
@@ -118,9 +118,9 @@ SUBCOMMANDS:
   blame    Trace why a specific line exists
 
 EXAMPLES:
-  dev-claw forensic explain src/auth/token.rs
-  dev-claw forensic explain src/auth/token.rs --lines 40-80
-  dev-claw forensic blame src/auth/token.rs")]
+  dclaw forensic explain src/auth/token.rs
+  dclaw forensic explain src/auth/token.rs --lines 40-80
+  dclaw forensic blame src/auth/token.rs")]
     Forensic {
         #[command(subcommand)]
         action: commands::forensic_cmd::ForensicAction,
@@ -133,9 +133,9 @@ SUBCOMMANDS:
   factory  Generate factory functions for a type
 
 EXAMPLES:
-  dev-claw mock gen schema.sql --count 20 --format sql
-  dev-claw mock gen types.ts --format json --out fixtures.json
-  dev-claw mock factory src/types/user.ts --out src/__tests__/factories.ts")]
+  dclaw mock gen schema.sql --count 20 --format sql
+  dclaw mock gen types.ts --format json --out fixtures.json
+  dclaw mock factory src/types/user.ts --out src/__tests__/factories.ts")]
     Mock {
         #[command(subcommand)]
         action: commands::mock_cmd::MockAction,
@@ -145,16 +145,16 @@ EXAMPLES:
     #[command(after_help = "\
 SUBCOMMANDS:
   up    Spin up a new VM
-  ls    List all VMs created by dev-claw
+  ls    List all VMs created by dclaw
   ssh   SSH into a VM
   down  Destroy a VM (prompts for confirmation)
 
 EXAMPLES:
-  dev-claw cloud up --provider aws --size small
-  dev-claw cloud up --provider gcp --region us-central1-a
-  dev-claw cloud ls
-  dev-claw cloud ssh my-vm
-  dev-claw cloud down my-vm
+  dclaw cloud up --provider aws --size small
+  dclaw cloud up --provider gcp --region us-central1-a
+  dclaw cloud ls
+  dclaw cloud ssh my-vm
+  dclaw cloud down my-vm
 
 SUPPORTED PROVIDERS: aws, gcp, azure, fly")]
     Cloud {
@@ -169,9 +169,9 @@ SUBCOMMANDS:
   outdated  Check for newer versions of all dependencies
 
 EXAMPLES:
-  dev-claw deps audit                # cargo audit + npm audit + govulncheck + pip-audit
-  dev-claw deps audit --triage       # + AI risk ranking: fix now / later / ignore
-  dev-claw deps outdated
+  dclaw deps audit                # cargo audit + npm audit + govulncheck + pip-audit
+  dclaw deps audit --triage       # + AI risk ranking: fix now / later / ignore
+  dclaw deps outdated
 
 AUTO-DETECTED: Cargo.toml, package.json, go.mod, pyproject.toml, requirements.txt")]
     Deps {
@@ -186,12 +186,12 @@ SUBCOMMANDS:
   pr    Review a GitHub pull request by number (requires gh CLI)
 
 EXAMPLES:
-  dev-claw review diff                       # all uncommitted changes
-  dev-claw review diff --staged              # only staged changes
-  dev-claw review diff --focus security      # OWASP Top 10 lens
-  dev-claw review diff --focus performance
-  dev-claw review pr 142
-  dev-claw review pr 142 --focus style")]
+  dclaw review diff                       # all uncommitted changes
+  dclaw review diff --staged              # only staged changes
+  dclaw review diff --focus security      # OWASP Top 10 lens
+  dclaw review diff --focus performance
+  dclaw review pr 142
+  dclaw review pr 142 --focus style")]
     Review {
         #[command(subcommand)]
         action: commands::review_cmd::ReviewAction,
@@ -204,9 +204,9 @@ SUBCOMMANDS:
   cut    Write CHANGELOG.md and create an annotated git tag (prompts first)
 
 EXAMPLES:
-  dev-claw release notes
-  dev-claw release notes --since v1.1.0
-  dev-claw release cut v2.0.0")]
+  dclaw release notes
+  dclaw release notes --since v1.1.0
+  dclaw release cut v2.0.0")]
     Release {
         #[command(subcommand)]
         action: commands::release_cmd::ReleaseAction,
@@ -215,12 +215,12 @@ EXAMPLES:
     /// Generate a daily standup update from your git activity
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw standup
-  dev-claw standup --since yesterday
-  dev-claw standup --since \"2 days ago\"
-  dev-claw standup --since \"last friday\"
-  dev-claw standup --format slack      # emoji bullets, *bold* headers
-  dev-claw standup --format markdown")]
+  dclaw standup
+  dclaw standup --since yesterday
+  dclaw standup --since \"2 days ago\"
+  dclaw standup --since \"last friday\"
+  dclaw standup --format slack      # emoji bullets, *bold* headers
+  dclaw standup --format markdown")]
     Standup {
         /// How far back to look (e.g. "yesterday", "2 days ago", "last friday")
         #[arg(long, default_value = "yesterday")]
@@ -238,9 +238,9 @@ SUBCOMMANDS:
   hook   Install pre-commit (guard) and post-checkout (check) git hooks
 
 EXAMPLES:
-  dev-claw env check
-  dev-claw env guard
-  dev-claw env hook")]
+  dclaw env check
+  dclaw env guard
+  dclaw env hook")]
     Env {
         #[command(subcommand)]
         action: commands::env_cmd::EnvAction,
@@ -255,11 +255,11 @@ SUBCOMMANDS:
   import   Import a workflow from a Gist URL or raw TOML URL
 
 EXAMPLES:
-  dev-claw workflow ls
-  dev-claw workflow run pre-push
-  dev-claw workflow run pre-push --dry-run
-  dev-claw workflow publish pre-push
-  dev-claw workflow import gist:abc123def456")]
+  dclaw workflow ls
+  dclaw workflow run pre-push
+  dclaw workflow run pre-push --dry-run
+  dclaw workflow publish pre-push
+  dclaw workflow import gist:abc123def456")]
     Workflow {
         #[command(subcommand)]
         action: commands::workflow_cmd::WorkflowAction,
@@ -268,7 +268,7 @@ EXAMPLES:
     /// Show LLM call quota usage for this month
     #[command(after_help = "\
 EXAMPLES:
-  dev-claw usage")]
+  dclaw usage")]
     Usage,
 
     /// View, add, and clear per-project LLM memory
@@ -280,31 +280,31 @@ SUBCOMMANDS:
   clear     Clear memory for this project (or globally with --global)
 
 EXAMPLES:
-  dev-claw memory ls
-  dev-claw memory note \"using postgres 16 with pgvector\"
-  dev-claw memory note \"auth is handled by clerk\" --command review
-  dev-claw memory feedback \"prefer concise responses\"
-  dev-claw memory clear
-  dev-claw memory clear --global")]
+  dclaw memory ls
+  dclaw memory note \"using postgres 16 with pgvector\"
+  dclaw memory note \"auth is handled by clerk\" --command review
+  dclaw memory feedback \"prefer concise responses\"
+  dclaw memory clear
+  dclaw memory clear --global")]
     Memory {
         #[command(subcommand)]
         action: commands::memory_cmd::MemoryAction,
     },
 
-    /// Manage API provider keys (stored encrypted at ~/dev-claw/creds/)
+    /// Manage API provider keys (stored encrypted at ~/dclaw/creds/)
     #[command(after_help = "\
 SUBCOMMANDS:
   set-key   Store an API key in the encrypted credentials store
   list-keys List all providers that have keys stored
 
 EXAMPLES:
-  dev-claw config set-key --provider deepseek    # prompted for key + passphrase
-  dev-claw config set-key --provider openai
-  dev-claw config set-key --provider anthropic
-  dev-claw config set-key --provider groq
-  dev-claw config set-key --provider mistral
-  dev-claw config set-key --provider ollama      # local, no key needed
-  dev-claw config list-keys
+  dclaw config set-key --provider deepseek    # prompted for key + passphrase
+  dclaw config set-key --provider openai
+  dclaw config set-key --provider anthropic
+  dclaw config set-key --provider groq
+  dclaw config set-key --provider mistral
+  dclaw config set-key --provider ollama      # local, no key needed
+  dclaw config list-keys
 
 ALTERNATIVE — set via environment variable (no passphrase needed):
   export OPENAI_API_KEY=sk-...
@@ -318,11 +318,11 @@ ALTERNATIVE — set via environment variable (no passphrase needed):
         action: ConfigAction,
     },
 
-    /// Global natural language interface — dev-claw "<what you want to do>"
+    /// Global natural language interface — dclaw "<what you want to do>"
     ///
     /// Sends all ~40 tool schemas to the planner (~600 extra tokens).
     /// Prefer scoped NL for single-domain requests — it's cheaper and more accurate:
-    ///   dev-claw git "..."  |  dev-claw review "..."  |  dev-claw deps "..."
+    ///   dclaw git "..."  |  dclaw review "..."  |  dclaw deps "..."
     #[command(external_subcommand)]
     Do(Vec<String>),
 }

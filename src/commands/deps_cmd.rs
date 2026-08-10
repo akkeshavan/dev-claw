@@ -16,7 +16,7 @@ pub enum DepsAction {
     },
     /// Check for outdated dependencies across detected package managers
     Outdated,
-    /// Natural language query — dev-claw deps "<what you want to do>"
+    /// Natural language query — dclaw deps "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -185,9 +185,7 @@ fn resolve_provider() -> Result<String> {
         return Ok(p);
     }
     creds::auto_detect_provider().ok_or_else(|| {
-        anyhow::anyhow!(
-            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-        )
+        anyhow::anyhow!("No API provider configured. Run: dclaw config set-key --provider deepseek")
     })
 }
 

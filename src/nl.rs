@@ -1,9 +1,9 @@
 /// Natural language command planner.
 ///
-/// Scoped mode (`dev-claw git "<query>"`) sends only that namespace's tool schemas
+/// Scoped mode (`dclaw git "<query>"`) sends only that namespace's tool schemas
 /// (~8-13 tools, ~150-250 tokens). Use this for single-domain requests.
 ///
-/// Global mode (`dev-claw "<query>"`) sends all schemas (~40 tools, ~600 tokens)
+/// Global mode (`dclaw "<query>"`) sends all schemas (~40 tools, ~600 tokens)
 /// and should be reserved for cross-domain workflows such as
 /// "review staged changes and if clean commit and push".
 use anyhow::{Context, Result};
@@ -94,7 +94,7 @@ TOOLS (forensic):
 const CLOUD_TOOLS: &str = "\
 TOOLS (cloud):
   cloud_up(provider=\"do\":str, size=null:str?, region=null:str?, image=null:str?, name=null:str?) — provision an ephemeral VM
-  cloud_ls() — list VMs created by dev-claw
+  cloud_ls() — list VMs created by dclaw
   cloud_down(vm:str) — destroy a VM by name or ID (prompts for confirmation)
   cloud_ssh(vm:str) — print the SSH command for a VM";
 
@@ -140,7 +140,7 @@ fn tools_for(namespace: &str) -> &'static str {
 
 // ── Planner prompt ────────────────────────────────────────────────────────────
 
-const PLANNER_SYSTEM: &str = r#"You are a dev-claw command planner. Map the user's natural language request to the correct sequence of dev-claw tool calls.
+const PLANNER_SYSTEM: &str = r#"You are a dclaw command planner. Map the user's natural language request to the correct sequence of dclaw tool calls.
 
 Return a JSON array — no markdown fences, no explanation. Each element:
   {"tool":"<exact name>","args":{<param>:<value>},"desc":"<one-line human description>"}
@@ -173,11 +173,11 @@ pub async fn run_scoped(namespace: &str, query: &str) -> Result<()> {
 
 /// Global NL mode — sends all ~40 tool schemas (~600 extra tokens vs. scoped).
 /// Use only for cross-domain workflows. For single-domain requests prefer:
-///   dev-claw git "<query>" | dev-claw review "<query>" | dev-claw deps "<query>" etc.
+///   dclaw git "<query>" | dclaw review "<query>" | dclaw deps "<query>" etc.
 pub async fn run_global(query: &str) -> Result<()> {
     eprintln!(
         "⚠  Global NL mode sends all tool schemas (~600 extra tokens).\n   \
-         For cheaper planning use a scoped command: dev-claw git \"...\", dev-claw review \"...\"\n"
+         For cheaper planning use a scoped command: dclaw git \"...\", dclaw review \"...\"\n"
     );
     let tools = all_tools();
     let context = git_context();
@@ -193,7 +193,7 @@ async fn run_plan(tools: &str, context: &str, query: &str) -> Result<()> {
     if steps.is_empty() {
         anyhow::bail!(
             "Could not map your request to any available tool.\n\
-             Try a more specific query or use the structured CLI (dev-claw --help)."
+             Try a more specific query or use the structured CLI (dclaw --help)."
         );
     }
 
@@ -231,9 +231,7 @@ async fn call_planner(tools: &str, context: &str, query: &str) -> Result<Vec<Ste
         .ok()
         .or_else(creds::auto_detect_provider)
         .ok_or_else(|| {
-            anyhow::anyhow!(
-                "No API key configured.\nRun: dev-claw config set-key --provider deepseek"
-            )
+            anyhow::anyhow!("No API key configured.\nRun: dclaw config set-key --provider deepseek")
         })?;
     let api_key = creds::load(&provider)?;
 

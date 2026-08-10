@@ -13,7 +13,7 @@ pub async fn set_key(provider: &str) -> Result<()> {
         anyhow::bail!("API key cannot be empty.");
     }
     creds::store(provider, api_key)?;
-    println!("✓ Stored key for '{provider}' in ~/dev-claw/creds/{provider}.enc");
+    println!("✓ Stored key for '{provider}' in ~/dclaw/creds/{provider}.enc");
     Ok(())
 }
 
@@ -26,7 +26,7 @@ pub async fn list_keys() -> Result<()> {
     println!();
     if providers.is_empty() {
         println!("No keys stored yet.");
-        println!("Run: dev-claw config set-key --provider <provider>");
+        println!("Run: dclaw config set-key --provider <provider>");
         return Ok(());
     }
     for p in &providers {

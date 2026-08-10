@@ -13,7 +13,7 @@ pub enum EnvAction {
     Guard,
     /// Install pre-commit and post-checkout git hooks
     Hook,
-    /// Natural language query — dev-claw env "<what you want to do>"
+    /// Natural language query — dclaw env "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -279,14 +279,14 @@ fn redact_value(content: &str) -> String {
 fn install_hooks() -> Result<()> {
     let hooks_dir = hooks_path()?;
     std::fs::create_dir_all(&hooks_dir)?;
-    install_hook(&hooks_dir.join("pre-commit"), "dev-claw env guard\n")?;
+    install_hook(&hooks_dir.join("pre-commit"), "dclaw env guard\n")?;
     install_hook(
         &hooks_dir.join("post-checkout"),
-        "dev-claw env check || true\n",
+        "dclaw env check || true\n",
     )?;
     println!("✓  Hooks installed in {}", hooks_dir.display());
-    println!("   pre-commit   : runs `dev-claw env guard`");
-    println!("   post-checkout: runs `dev-claw env check` on branch switch");
+    println!("   pre-commit   : runs `dclaw env guard`");
+    println!("   post-checkout: runs `dclaw env check` on branch switch");
     Ok(())
 }
 

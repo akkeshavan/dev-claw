@@ -11,7 +11,7 @@
 set -e
 
 REPO="akkeshavan/dev-claw"
-BINARY="dev-claw"
+BINARY="dclaw"
 
 # ── Colours ────────────────────────────────────────────────────────────────────
 if [ -t 1 ]; then

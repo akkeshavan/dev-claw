@@ -1,8 +1,8 @@
-# dev-claw
+# dclaw
 
 **AI-powered CLI daemon for SDLC automation.**
 
-Stop context-switching to do the non-coding parts of coding. dev-claw brings AI into every phase of your workflow — from a broken build to a shipped release — using whatever LLM provider you already have a key for.
+Stop context-switching to do the non-coding parts of coding. dclaw brings AI into every phase of your workflow — from a broken build to a shipped release — using whatever LLM provider you already have a key for.
 
 [![CI](https://github.com/akkeshavan/dev-claw/actions/workflows/ci.yml/badge.svg)](https://github.com/akkeshavan/dev-claw/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/akkeshavan/dev-claw)](https://github.com/akkeshavan/dev-claw/releases/latest)
@@ -26,7 +26,7 @@ Stop context-switching to do the non-coding parts of coding. dev-claw brings AI 
 ### curl (recommended — macOS and Linux)
 
 ```sh
-curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh
+curl -fsSL https://akkeshavan.github.io/dclaw/install.sh | sh
 ```
 
 Auto-detects your OS and architecture, verifies SHA-256, installs to `~/.local/bin`.
@@ -37,13 +37,13 @@ Download the pre-built binary for your platform from [Releases](https://github.c
 
 | Platform | File |
 |---|---|
-| macOS — Apple Silicon | `dev-claw-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
-| macOS — Intel | `dev-claw-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
-| Linux x86_64 (static) | `dev-claw-vX.Y.Z-x86_64-unknown-linux-musl.tar.gz` |
-| Linux ARM64 (static) | `dev-claw-vX.Y.Z-aarch64-unknown-linux-musl.tar.gz` |
-| Windows x86_64 | `dev-claw-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
+| macOS — Apple Silicon | `dclaw-vX.Y.Z-aarch64-apple-darwin.tar.gz` |
+| macOS — Intel | `dclaw-vX.Y.Z-x86_64-apple-darwin.tar.gz` |
+| Linux x86_64 (static) | `dclaw-vX.Y.Z-x86_64-unknown-linux-musl.tar.gz` |
+| Linux ARM64 (static) | `dclaw-vX.Y.Z-aarch64-unknown-linux-musl.tar.gz` |
+| Windows x86_64 | `dclaw-vX.Y.Z-x86_64-pc-windows-msvc.zip` |
 
-Extract and copy the `dev-claw` binary to any directory in your `$PATH`.
+Extract and copy the `dclaw` binary to any directory in your `$PATH`.
 
 ### Build from source
 
@@ -51,7 +51,7 @@ Extract and copy the `dev-claw` binary to any directory in your `$PATH`.
 
 No other system dependencies are needed. The build uses `rustls` (pure-Rust TLS) and bundles SQLite, so `openssl` and `libsqlite3-dev` are not required.
 
-> **Note:** `dev-claw git commit` and `dev-claw git pr` generate messages using an LLM but delegate the actual git operations to your existing `git` installation. Git must already be configured with your identity and credentials:
+> **Note:** `dclaw git commit` and `dclaw git pr` generate messages using an LLM but delegate the actual git operations to your existing `git` installation. Git must already be configured with your identity and credentials:
 > ```sh
 > git config --global user.name "Your Name"
 > git config --global user.email "you@example.com"
@@ -60,9 +60,9 @@ No other system dependencies are needed. The build uses `rustls` (pure-Rust TLS)
 
 ```sh
 git clone https://github.com/akkeshavan/dev-claw
-cd dev-claw
+cd dclaw
 cargo build --release
-# Binary is at: target/release/dev-claw
+# Binary is at: target/release/dclaw
 ```
 
 To install to `~/.cargo/bin`:
@@ -85,219 +85,219 @@ cargo fmt --check
 
 ```sh
 # 1. Set an API key — pick any provider
-dev-claw config set-key --provider deepseek   # cheapest
-dev-claw config set-key --provider openai     # most capable
-dev-claw config set-key --provider ollama     # local, no key needed
+dclaw config set-key --provider deepseek   # cheapest
+dclaw config set-key --provider openai     # most capable
+dclaw config set-key --provider ollama     # local, no key needed
 
 # 2. Initialise a project (generates .devclawrc)
-dev-claw init
+dclaw init
 
 # 3. Start automating
-cargo build 2>&1 | dev-claw doctor
-dev-claw git commit
-dev-claw standup
+cargo build 2>&1 | dclaw doctor
+dclaw git commit
+dclaw standup
 ```
 
 ---
 
 ## Commands
 
-### `dev-claw doctor`
+### `dclaw doctor`
 
 Pipe any build log, compiler error, or crash dump. Get root cause + a copy-pasteable fix. No preamble.
 
 ```sh
-cargo build 2>&1 | dev-claw doctor
-npm run build 2>&1 | dev-claw doctor
-cat ci-failure.log | dev-claw doctor
+cargo build 2>&1 | dclaw doctor
+npm run build 2>&1 | dclaw doctor
+cat ci-failure.log | dclaw doctor
 ```
 
 ---
 
-### `dev-claw git`
+### `dclaw git`
 
-> dev-claw generates the message; your existing git credentials handle the actual commit and push. Git must be configured with `user.name`/`user.email` before use.
+> dclaw generates the message; your existing git credentials handle the actual commit and push. Git must be configured with `user.name`/`user.email` before use.
 
 **`commit`** — generate a Conventional Commits message from staged diff.
 
 ```sh
 git add -p
-dev-claw git commit
+dclaw git commit
 ```
 
 **`pr`** — draft a pull request description from commits since `main`.
 
 ```sh
-dev-claw git pr
-dev-claw git pr --base develop
+dclaw git pr
+dclaw git pr --base develop
 ```
 
 **`hook`** — install a `prepare-commit-msg` hook so commit generation runs automatically.
 
 ```sh
-dev-claw git hook
+dclaw git hook
 ```
 
 ---
 
-### `dev-claw review`
+### `dclaw review`
 
 AI code review: Summary → Findings (Critical / Major / Minor / Nitpick) → Positives.
 
 ```sh
-dev-claw review diff                      # all uncommitted changes
-dev-claw review diff --staged             # only staged changes
-dev-claw review diff --focus security     # OWASP Top 10 lens
-dev-claw review pr 142                    # GitHub PR by number (needs gh CLI)
+dclaw review diff                      # all uncommitted changes
+dclaw review diff --staged             # only staged changes
+dclaw review diff --focus security     # OWASP Top 10 lens
+dclaw review pr 142                    # GitHub PR by number (needs gh CLI)
 ```
 
 ---
 
-### `dev-claw forensic`
+### `dclaw forensic`
 
 Explain why code exists using `git blame` and LLM analysis.
 
 ```sh
-dev-claw forensic explain src/auth/token.rs          # explain entire file
-dev-claw forensic explain src/auth/token.rs --lines 40-80
-dev-claw forensic blame src/auth/token.rs            # annotated blame summary
+dclaw forensic explain src/auth/token.rs          # explain entire file
+dclaw forensic explain src/auth/token.rs --lines 40-80
+dclaw forensic blame src/auth/token.rs            # annotated blame summary
 ```
 
 ---
 
-### `dev-claw env`
+### `dclaw env`
 
 **`check`** — diff `.env` against `.env.example`; report missing, empty, or extra keys.
 
 ```sh
-dev-claw env check
+dclaw env check
 ```
 
 **`guard`** — scan staged changes for secrets about to be committed.
 
 ```sh
-dev-claw env guard
+dclaw env guard
 ```
 
 **`hook`** — install pre-commit (`env guard`) and post-checkout (`env check`) git hooks.
 
 ```sh
-dev-claw env hook
+dclaw env hook
 ```
 
 ---
 
-### `dev-claw deps`
+### `dclaw deps`
 
 Security audits and outdated-package checks across all detected package managers (Cargo, npm, Go, pip) in one shot.
 
 ```sh
-dev-claw deps audit              # run cargo audit, npm audit, govulncheck, pip-audit
-dev-claw deps audit --triage     # + AI risk ranking: fix now / later / ignore
-dev-claw deps outdated           # check for newer versions
+dclaw deps audit              # run cargo audit, npm audit, govulncheck, pip-audit
+dclaw deps audit --triage     # + AI risk ranking: fix now / later / ignore
+dclaw deps outdated           # check for newer versions
 ```
 
 Auto-detects package managers from: `Cargo.toml`, `package.json`, `go.mod`, `pyproject.toml`, `requirements.txt`.
 
 ---
 
-### `dev-claw mock`
+### `dclaw mock`
 
 Generate realistic fixture data from any schema.
 
 ```sh
-dev-claw mock gen schema.sql --count 20 --format sql
-dev-claw mock gen types.ts --format json --out fixtures.json
-dev-claw mock factory src/types/user.ts --out src/__tests__/factories.ts
+dclaw mock gen schema.sql --count 20 --format sql
+dclaw mock gen types.ts --format json --out fixtures.json
+dclaw mock factory src/types/user.ts --out src/__tests__/factories.ts
 ```
 
 ---
 
-### `dev-claw standup`
+### `dclaw standup`
 
 Generate a daily standup update from git history.
 
 ```sh
-dev-claw standup
-dev-claw standup --since "2 days ago"
-dev-claw standup --format slack     # emoji bullets, *bold* headers
-dev-claw standup --format markdown
+dclaw standup
+dclaw standup --since "2 days ago"
+dclaw standup --format slack     # emoji bullets, *bold* headers
+dclaw standup --format markdown
 ```
 
 ---
 
-### `dev-claw release`
+### `dclaw release`
 
 **`notes`** — draft release notes from commits since the last tag.
 
 ```sh
-dev-claw release notes
-dev-claw release notes --since v1.1.0
+dclaw release notes
+dclaw release notes --since v1.1.0
 ```
 
 **`cut`** — write `CHANGELOG.md` and create an annotated git tag. Prompts for confirmation before writing.
 
 ```sh
-dev-claw release cut v2.0.0
+dclaw release cut v2.0.0
 ```
 
 ---
 
-### `dev-claw cloud`
+### `dclaw cloud`
 
 Provision and destroy ephemeral VMs across cloud providers.
 
 ```sh
-dev-claw cloud up --provider aws --region us-east-1 --size small
-dev-claw cloud ls
-dev-claw cloud ssh my-vm
-dev-claw cloud down my-vm        # prompts for confirmation before destroying
+dclaw cloud up --provider aws --region us-east-1 --size small
+dclaw cloud ls
+dclaw cloud ssh my-vm
+dclaw cloud down my-vm        # prompts for confirmation before destroying
 ```
 
 Supported providers: AWS, GCP, Azure, Fly.io. AWS/GCP/Azure delegate to their CLIs (`aws`, `gcloud`, `az`) — any existing auth (SSO, IAM roles, service accounts) works automatically.
 
 ---
 
-### `dev-claw workflow`
+### `dclaw workflow`
 
 Define multi-step pipelines in `.devclawrc`, run them locally, and share via GitHub Gist.
 
 ```sh
-dev-claw workflow ls
-dev-claw workflow run pre-push
-dev-claw workflow publish pre-push
-dev-claw workflow import gist:abc123def456
+dclaw workflow ls
+dclaw workflow run pre-push
+dclaw workflow publish pre-push
+dclaw workflow import gist:abc123def456
 ```
 
 ---
 
-### `dev-claw memory`
+### `dclaw memory`
 
 Per-project memory that persists across sessions. Context is injected into every LLM call for better answers over time.
 
 ```sh
-dev-claw memory note "using postgres 16 with pgvector"
-dev-claw memory feedback "prefer concise responses"
-dev-claw memory ls
-dev-claw memory clear            # clears this project only
-dev-claw memory clear --global   # clears global SQLite store
+dclaw memory note "using postgres 16 with pgvector"
+dclaw memory feedback "prefer concise responses"
+dclaw memory ls
+dclaw memory clear            # clears this project only
+dclaw memory clear --global   # clears global SQLite store
 ```
 
 ---
 
-### `dev-claw config` / `dev-claw usage`
+### `dclaw config` / `dclaw usage`
 
 ```sh
-dev-claw config set-key --provider deepseek
-dev-claw config list-keys
-dev-claw usage                   # token quota for this month
+dclaw config set-key --provider deepseek
+dclaw config list-keys
+dclaw usage                   # token quota for this month
 ```
 
 ---
 
 ## Configuration
 
-`dev-claw init` generates a `.devclawrc` starter. Or write one manually:
+`dclaw init` generates a `.devclawrc` starter. Or write one manually:
 
 ```toml
 [stack]
@@ -321,13 +321,13 @@ name  = "ship"
 steps = ["deps audit --triage", "release notes", "release cut"]
 ```
 
-dev-claw searches upward from the current directory for `.devclawrc`.
+dclaw searches upward from the current directory for `.devclawrc`.
 
 ---
 
 ## API Providers
 
-dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GCM + Argon2id and saved to `~/dev-claw/creds/` — one file per provider (e.g. `deepseek.enc`, `openai.enc`). On macOS/Linux the directory is locked to `700` and each file to `600` so only your user can read them. You set a master passphrase on first use; subsequent commands prompt for it once per session.
+dclaw never stores keys in plain text. All keys are encrypted with AES-256-GCM + Argon2id and saved to `~/dclaw/creds/` — one file per provider (e.g. `deepseek.enc`, `openai.enc`). On macOS/Linux the directory is locked to `700` and each file to `600` so only your user can read them. You set a master passphrase on first use; subsequent commands prompt for it once per session.
 
 ### Supported providers
 
@@ -346,34 +346,34 @@ dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GC
 
 **OpenAI**
 1. Get your key at https://platform.openai.com/api-keys
-2. `dev-claw config set-key --provider openai`
+2. `dclaw config set-key --provider openai`
 
 **Anthropic**
 1. Get your key at https://console.anthropic.com/settings/keys
-2. `dev-claw config set-key --provider anthropic`
+2. `dclaw config set-key --provider anthropic`
 
 **DeepSeek** *(recommended — best cost/quality)*
 1. Get your key at https://platform.deepseek.com/api_keys
-2. `dev-claw config set-key --provider deepseek`
+2. `dclaw config set-key --provider deepseek`
 
 **Groq** *(fastest)*
 1. Get your key at https://console.groq.com/keys
-2. `dev-claw config set-key --provider groq`
+2. `dclaw config set-key --provider groq`
 
 **Mistral**
 1. Get your key at https://console.mistral.ai/api-keys
-2. `dev-claw config set-key --provider mistral`
+2. `dclaw config set-key --provider mistral`
 
 **OpenRouter** *(access 200+ models with one key)*
 1. Get your key at https://openrouter.ai/keys
-2. `dev-claw config set-key --provider openrouter`
+2. `dclaw config set-key --provider openrouter`
 
 **Ollama** *(local, no API key required)*
 1. Install Ollama from https://ollama.com
 2. Pull a model: `ollama pull llama3.2`
 3. Set the provider — no key needed:
    ```sh
-   DEV_CLAW_PROVIDER=ollama dev-claw doctor
+   DEV_CLAW_PROVIDER=ollama dclaw doctor
    ```
    Or set it as the default in `.devclawrc`:
    ```toml
@@ -385,21 +385,21 @@ dev-claw never stores keys in plain text. All keys are encrypted with AES-256-GC
 ```sh
 DEV_CLAW_PROVIDER=openai-compat \
 DEV_CLAW_BASE_URL=http://localhost:8000/v1 \
-dev-claw git commit
+dclaw git commit
 ```
 
 ### Verify your setup
 
 ```sh
-dev-claw config list-keys    # show which providers are configured
-dev-claw usage               # confirm a call went through this month
+dclaw config list-keys    # show which providers are configured
+dclaw usage               # confirm a call went through this month
 ```
 
 ### Switch provider per command
 
 ```sh
-DEV_CLAW_PROVIDER=anthropic dev-claw review diff --focus security
-DEV_CLAW_PROVIDER=groq dev-claw git commit
+DEV_CLAW_PROVIDER=anthropic dclaw review diff --focus security
+DEV_CLAW_PROVIDER=groq dclaw git commit
 ```
 
 ### CI / scripting
@@ -408,7 +408,7 @@ Set `DEV_CLAW_MASTER` to skip the interactive passphrase prompt:
 
 ```sh
 export DEV_CLAW_MASTER="your master passphrase"
-dev-claw standup --format slack
+dclaw standup --format slack
 ```
 
 ---
@@ -417,7 +417,7 @@ dev-claw standup --format slack
 
 ```sh
 git clone https://github.com/akkeshavan/dev-claw
-cd dev-claw
+cd dclaw
 cargo build
 cargo test        # 275 tests
 cargo clippy      # zero warnings enforced

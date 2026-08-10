@@ -48,8 +48,8 @@ fn read_stdin() -> Result<String> {
     if io::stdin().is_terminal() {
         anyhow::bail!(
             "Expecting piped input, got a terminal.\n\
-             Usage:  npm run dev 2>&1 | dev-claw doctor\n\
-                     cargo build 2>&1 | dev-claw doctor"
+             Usage:  npm run dev 2>&1 | dclaw doctor\n\
+                     cargo build 2>&1 | dclaw doctor"
         );
     }
     let mut buf = String::new();
@@ -98,8 +98,8 @@ fn resolve_provider() -> Result<String> {
         .ok_or_else(|| {
             anyhow::anyhow!(
                 "No API key configured.\n\
-                 Run:  dev-claw config set-key --provider deepseek\n\
-                 Or:   DEV_CLAW_PROVIDER=ollama dev-claw doctor"
+                 Run:  dclaw config set-key --provider deepseek\n\
+                 Or:   DEV_CLAW_PROVIDER=ollama dclaw doctor"
             )
         })
 }

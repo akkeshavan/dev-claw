@@ -1,12 +1,12 @@
 [package]
 name = "dev-claw"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "AI-powered developer daemon for SDLC automation"
 license = "MIT"
 
 [[bin]]
-name = "dev-claw"
+name = "dclaw"
 path = "src/main.rs"
 
 [dependencies]

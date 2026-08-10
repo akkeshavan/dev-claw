@@ -29,7 +29,7 @@ pub enum WorkflowAction {
         /// Gist URL (https://gist.github.com/...) or raw TOML URL
         url: String,
     },
-    /// Natural language query — dev-claw workflow "<what you want to do>"
+    /// Natural language query — dclaw workflow "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -76,7 +76,7 @@ fn run_workflow(name: &str, dry_run: bool) -> Result<()> {
     let wf = find_workflow(&all, name)
         .ok_or_else(|| {
             anyhow::anyhow!(
-                "No workflow named '{name}'. Run `dev-claw workflow ls` to list workflows."
+                "No workflow named '{name}'. Run `dclaw workflow ls` to list workflows."
             )
         })?
         .clone();
@@ -87,13 +87,13 @@ fn run_workflow(name: &str, dry_run: bool) -> Result<()> {
         wf.steps.len()
     );
     for (i, step) in wf.steps.iter().enumerate() {
-        println!("── Step {}/{}: dev-claw {step}", i + 1, wf.steps.len());
+        println!("── Step {}/{}: dclaw {step}", i + 1, wf.steps.len());
         if dry_run {
             println!("   [dry-run: skipped]\n");
             continue;
         }
         if !execute_step(step)? {
-            bail!("Step failed: dev-claw {step}\nWorkflow aborted.");
+            bail!("Step failed: dclaw {step}\nWorkflow aborted.");
         }
         println!();
     }
@@ -111,7 +111,7 @@ fn publish_workflow(name: &str) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("No workflow named '{name}'"))?
         .clone();
     let toml = serialize_workflows(&[wf]);
-    let desc = format!("dev-claw workflow: {name}");
+    let desc = format!("dclaw workflow: {name}");
     let filename = format!("{name}.toml");
     let mut child = Command::new("gh")
         .args([
@@ -147,7 +147,7 @@ fn publish_workflow(name: &str) -> Result<()> {
     }
     let gist_url = String::from_utf8_lossy(&out.stdout).trim().to_string();
     println!("Published! Share this workflow with:");
-    println!("  dev-claw workflow import {gist_url}");
+    println!("  dclaw workflow import {gist_url}");
     Ok(())
 }
 
@@ -183,15 +183,15 @@ fn import_workflow(url: &str) -> Result<()> {
         added += 1;
     }
     save_global_workflows(&existing)?;
-    println!("\nImported {added} workflow(s). Run `dev-claw workflow ls` to see them.");
+    println!("\nImported {added} workflow(s). Run `dclaw workflow ls` to see them.");
     Ok(())
 }
 
 // ── Step execution ────────────────────────────────────────────────────────────
 
 pub fn execute_step(step: &str) -> Result<bool> {
-    let exe = std::env::current_exe()
-        .map_err(|e| anyhow::anyhow!("Cannot locate dev-claw binary: {e}"))?;
+    let exe =
+        std::env::current_exe().map_err(|e| anyhow::anyhow!("Cannot locate dclaw binary: {e}"))?;
     let args = shlex::split(step)
         .ok_or_else(|| anyhow::anyhow!("Invalid step syntax (unmatched quote?): {step}"))?;
     let status = Command::new(&exe)
@@ -334,7 +334,7 @@ fn print_workflow_group(label: &str, workflows: &[WorkflowDef]) {
         };
         println!("   {}{suffix}", wf.name);
         for step in &wf.steps {
-            println!("     • dev-claw {step}");
+            println!("     • dclaw {step}");
         }
     }
     println!();

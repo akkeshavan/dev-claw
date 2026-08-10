@@ -23,7 +23,7 @@ pub enum ReleaseAction {
         #[arg(long)]
         dry_run: bool,
     },
-    /// Natural language query — dev-claw release "<what you want to do>"
+    /// Natural language query — dclaw release "<what you want to do>"
     #[command(external_subcommand)]
     Nl(Vec<String>),
 }
@@ -208,9 +208,7 @@ fn resolve_provider() -> Result<String> {
         return Ok(p);
     }
     creds::auto_detect_provider().ok_or_else(|| {
-        anyhow::anyhow!(
-            "No API provider configured. Run: dev-claw config set-key --provider deepseek"
-        )
+        anyhow::anyhow!("No API provider configured. Run: dclaw config set-key --provider deepseek")
     })
 }
 

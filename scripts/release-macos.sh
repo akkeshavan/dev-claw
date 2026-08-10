@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build macOS releases locally and push to the dev-claw GitHub Release.
+# Build macOS releases locally and push to the dclaw GitHub Release.
 #
 # Usage:  ./scripts/release-macos.sh v0.1.0
 #
@@ -10,15 +10,15 @@
 #
 # This script:
 #   1. Builds aarch64-apple-darwin and x86_64-apple-darwin
-#   2. Packages each as dev-claw-vX.Y.Z-<target>.tar.gz
-#   3. Uploads both to the dev-claw GitHub Release
+#   2. Packages each as dclaw-vX.Y.Z-<target>.tar.gz
+#   3. Uploads both to the dclaw GitHub Release
 #   4. Downloads all CI-built assets, computes sha256 for every asset
 #   5. Uploads combined checksums.txt
 
 set -euo pipefail
 
 VERSION="${1:?Usage: $0 <version tag, e.g. v0.1.0>}"
-BINARY_NAME="dev-claw"
+BINARY_NAME="dclaw"
 RELEASES_REPO="akkeshavan/dev-claw"
 
 # ── Prerequisites ─────────────────────────────────────────────────────────────

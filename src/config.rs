@@ -11,16 +11,16 @@ pub struct WorkflowDef {
 
 #[derive(Deserialize, Default, Debug)]
 pub struct Config {
-    #[allow(dead_code)] // used by future `dev-claw git` / `dev-claw forensic`
+    #[allow(dead_code)] // used by future `dclaw git` / `dclaw forensic`
     pub stack: Option<StackConfig>,
     pub doctor: Option<DoctorConfig>,
-    #[allow(dead_code)] // used by future `dev-claw git`
+    #[allow(dead_code)] // used by future `dclaw git`
     pub git: Option<GitConfig>,
     pub usage: Option<UsageLimits>,
     pub workflows: Option<Vec<WorkflowDef>>,
 }
 
-#[allow(dead_code)] // used by future `dev-claw git` / `dev-claw forensic`
+#[allow(dead_code)] // used by future `dclaw git` / `dclaw forensic`
 #[derive(Deserialize, Debug)]
 pub struct StackConfig {
     pub name: Option<String>,
@@ -33,7 +33,7 @@ pub struct DoctorConfig {
     pub max_log_lines: Option<usize>,
 }
 
-#[allow(dead_code)] // used by future `dev-claw git`
+#[allow(dead_code)] // used by future `dclaw git`
 #[derive(Deserialize, Debug)]
 pub struct GitConfig {
     pub commit_style: Option<String>,
@@ -45,7 +45,7 @@ pub struct UsageLimits {
     pub monthly_limit: Option<u32>,
     pub doctor_limit: Option<u32>,
     pub git_limit: Option<u32>,
-    #[allow(dead_code)] // future `dev-claw env`
+    #[allow(dead_code)] // future `dclaw env`
     pub env_limit: Option<u32>,
     pub forensic_limit: Option<u32>,
     pub mock_limit: Option<u32>,
@@ -101,7 +101,7 @@ impl Config {
     pub fn data_dir() -> Result<PathBuf> {
         let base = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Cannot determine config directory"))?;
-        let dir = base.join("dev-claw");
+        let dir = base.join("dclaw");
         std::fs::create_dir_all(&dir)?;
         Ok(dir)
     }
@@ -205,11 +205,11 @@ max_log_lines        = 50
 [[workflows]]
 name = "pre-push"
 description = "Run before every push"
-steps = ["dev-claw env check", "dev-claw review diff --staged"]
+steps = ["dclaw env check", "dclaw review diff --staged"]
 
 [[workflows]]
 name = "release"
-steps = ["dev-claw deps audit --triage", "dev-claw release cut"]
+steps = ["dclaw deps audit --triage", "dclaw release cut"]
 "#;
         let cfg: Config = toml::from_str(src).unwrap();
         let wfs = cfg.workflows.unwrap();
