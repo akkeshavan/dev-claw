@@ -1,0 +1,123 @@
+name: Smoke Test — Windows
+
+on:
+  # Trigger manually and specify the version to test.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to test (e.g. v0.1.2)'
+        required: false
+        default: ''
+
+  # Also trigger automatically when a release is published.
+  # The job retries the asset download to handle the gap between release
+  # creation and the build workflow uploading the zip.
+  release:
+    types: [published]
+
+env:
+  BINARY_NAME: dclaw
+  TARGET: x86_64-pc-windows-msvc
+  REPO: akkeshavan/dev-claw
+
+jobs:
+  smoke:
+    name: Windows x86-64 smoke test
+    runs-on: windows-latest
+
+    steps:
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "VERSION=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ inputs.version }}" ]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            # Fall back to latest release
+            VERSION=$(curl -fsSL "https://api.github.com/repos/${{ env.REPO }}/releases/latest" \
+              | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+            echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release asset (with retries)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.ver.outputs.VERSION }}"
+          ASSET="${{ env.BINARY_NAME }}-${VERSION}-${{ env.TARGET }}.zip"
+          echo "Waiting for asset: $ASSET (version $VERSION)"
+
+          # Retry for up to 10 minutes — build workflow may still be uploading
+          for i in $(seq 1 20); do
+            if gh release download "$VERSION" \
+                --repo "${{ env.REPO }}" \
+                --pattern "$ASSET" \
+                --output "$ASSET" 2>/dev/null; then
+              echo "Downloaded $ASSET"
+              echo "ASSET=$ASSET" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Attempt $i: asset not ready yet, waiting 30s..."
+            sleep 30
+          done
+          echo "ERROR: asset not available after 10 minutes"
+          exit 1
+
+      - name: Extract binary and add to PATH
+        shell: pwsh
+        run: |
+          $version = "${{ steps.ver.outputs.VERSION }}"
+          $assetName = "${{ env.BINARY_NAME }}-${version}-${{ env.TARGET }}"
+          Expand-Archive -Path "${assetName}.zip" -DestinationPath "."
+          "$PWD\$assetName" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Set up git repo for git subcommand tests
+        shell: bash
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Smoke Test"
+          mkdir smoke-repo && cd smoke-repo && git init -q
+
+      - name: Run smoke tests
+        shell: bash
+        working-directory: smoke-repo
+        run: |
+          PASS=0; FAIL=0
+          VERSION="${{ steps.ver.outputs.VERSION }}"
+          VTAG="${VERSION#v}"
+
+          check() {
+            local desc="$1"; shift
+            if "$@" > /tmp/out.txt 2>&1; then
+              echo "  PASS  $desc"
+              PASS=$((PASS+1))
+            else
+              echo "  FAIL  $desc"
+              sed 's/^/        /' /tmp/out.txt | head -6
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          check "--version exits 0"      dclaw --version
+          check "--help exits 0"         dclaw --help
+          check "git --help exits 0"     dclaw git --help
+          check "git check exits 0"      dclaw git check
+          check "review --help exits 0"  dclaw review --help
+          check "deps --help exits 0"    dclaw deps --help
+          check "release --help exits 0" dclaw release --help
+          check "env --help exits 0"     dclaw env --help
+          check "memory --help exits 0"  dclaw memory --help
+          check "config --help exits 0"  dclaw config --help
+
+          VER_OUT=$(dclaw --version 2>&1)
+          case "$VER_OUT" in
+            *"$VTAG"*) echo "  PASS  version string contains $VTAG"; PASS=$((PASS+1)) ;;
+            *)          echo "  FAIL  version string: $VER_OUT";      FAIL=$((FAIL+1)) ;;
+          esac
+
+          echo ""
+          echo "Results: $PASS passed, $FAIL failed"
+          [ "$FAIL" -eq 0 ]
