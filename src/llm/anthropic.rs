@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use super::LlmClient;
 
 pub struct Client {
+    base_url: String,
     api_key: String,
     model: String,
     http: HttpClient,
@@ -13,11 +14,16 @@ pub struct Client {
 
 impl Client {
     pub fn new(api_key: &str, model: &str) -> Self {
+        Self::with_base_url("https://api.anthropic.com/v1", api_key, model)
+    }
+
+    pub fn with_base_url(base_url: &str, api_key: &str, model: &str) -> Self {
         let http = HttpClient::builder()
             .timeout(std::time::Duration::from_secs(60))
             .build()
             .expect("Failed to build HTTP client");
         Self {
+            base_url: base_url.to_string(),
             api_key: api_key.to_string(),
             model: model.to_string(),
             http,
@@ -76,7 +82,7 @@ impl LlmClient for Client {
 
         let resp = self
             .http
-            .post("https://api.anthropic.com/v1/messages")
+            .post(format!("{}/messages", self.base_url))
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
             .json(&body)
@@ -132,5 +138,68 @@ mod tests {
     fn empty_content_returns_error() {
         let resp = Response { content: vec![] };
         assert!(extract_text(resp).is_err());
+    }
+
+    // ── HTTP integration tests (mock server) ─────────────────────────────────
+
+    use wiremock::matchers::{header, method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn sends_correct_headers_and_parses_response() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/messages"))
+            .and(header("x-api-key", "sk-ant-test"))
+            .and(header("anthropic-version", "2023-06-01"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "content": [{"text": "Root cause: missing semicolon\nFix: add ';' on line 5"}]
+            })))
+            .mount(&server)
+            .await;
+
+        let client = Client::with_base_url(&server.uri(), "sk-ant-test", "claude-haiku-4-5-20251001");
+        let result = client.complete("You are helpful.", "error log here").await.unwrap();
+        assert!(result.contains("Root cause"));
+    }
+
+    #[tokio::test]
+    async fn propagates_api_error_status() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/messages"))
+            .respond_with(ResponseTemplate::new(401).set_body_string("Unauthorized"))
+            .mount(&server)
+            .await;
+
+        let client = Client::with_base_url(&server.uri(), "bad-key", "claude-haiku-4-5-20251001");
+        let err = client.complete("sys", "user").await.unwrap_err();
+        assert!(err.to_string().contains("401"));
+    }
+
+    #[tokio::test]
+    async fn request_body_contains_model_and_messages() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/messages"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "content": [{"text": "ok"}]
+            })))
+            .mount(&server)
+            .await;
+
+        let client = Client::with_base_url(&server.uri(), "sk-ant-test", "claude-haiku-4-5-20251001");
+        client.complete("system prompt", "user message").await.unwrap();
+
+        let req = &server.received_requests().await.unwrap()[0];
+        let body: serde_json::Value = serde_json::from_slice(&req.body).unwrap();
+        assert_eq!(body["model"], "claude-haiku-4-5-20251001");
+        assert_eq!(body["system"], "system prompt");
+        assert_eq!(body["messages"][0]["role"], "user");
+        assert_eq!(body["messages"][0]["content"], "user message");
+        assert_eq!(body["max_tokens"], 512);
     }
 }

@@ -145,4 +145,67 @@ mod tests {
         let resp = ChatResponse { choices: vec![] };
         assert!(extract_text(resp).is_err());
     }
+
+    // ── HTTP integration tests (mock server) ─────────────────────────────────
+
+    use wiremock::matchers::{header, method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn openai_sends_bearer_auth_and_parses_response() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .and(header("authorization", "Bearer sk-openai-test"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "choices": [{"message": {"content": "Root cause: null pointer\nFix: add nil check"}}]
+            })))
+            .mount(&server)
+            .await;
+
+        let client = Client::new(&server.uri(), "sk-openai-test", "gpt-4o-mini");
+        let result = client.complete("You are helpful.", "error log").await.unwrap();
+        assert!(result.contains("Root cause"));
+    }
+
+    #[tokio::test]
+    async fn openai_propagates_api_error_status() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(ResponseTemplate::new(429).set_body_string("Rate limited"))
+            .mount(&server)
+            .await;
+
+        let client = Client::new(&server.uri(), "sk-openai-test", "gpt-4o-mini");
+        let err = client.complete("sys", "user").await.unwrap_err();
+        assert!(err.to_string().contains("429"));
+    }
+
+    #[tokio::test]
+    async fn openai_request_body_contains_model_messages_and_temperature() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "choices": [{"message": {"content": "ok"}}]
+            })))
+            .mount(&server)
+            .await;
+
+        let client = Client::new(&server.uri(), "sk-openai-test", "gpt-4o-mini");
+        client.complete("system prompt", "user message").await.unwrap();
+
+        let req = &server.received_requests().await.unwrap()[0];
+        let body: serde_json::Value = serde_json::from_slice(&req.body).unwrap();
+        assert_eq!(body["model"], "gpt-4o-mini");
+        assert_eq!(body["messages"][0]["role"], "system");
+        assert_eq!(body["messages"][0]["content"], "system prompt");
+        assert_eq!(body["messages"][1]["role"], "user");
+        assert_eq!(body["messages"][1]["content"], "user message");
+        assert!(body["temperature"].as_f64().unwrap() <= 0.2);
+    }
 }
