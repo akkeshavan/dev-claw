@@ -515,13 +515,13 @@ dclaw forensic blame src/legacy.rs:204</pre>
           <tr>
             <td><strong>OpenAI</strong></td>
             <td><code>openai</code></td>
-            <td>gpt-4o</td>
+            <td>gpt-4o-mini</td>
             <td>Best overall quality</td>
           </tr>
           <tr>
             <td><strong>Anthropic</strong></td>
             <td><code>anthropic</code></td>
-            <td>claude-sonnet-4</td>
+            <td>claude-haiku-4-5</td>
             <td>Nuanced reasoning &amp; long context</td>
           </tr>
           <tr>
@@ -539,13 +539,13 @@ dclaw forensic blame src/legacy.rs:204</pre>
           <tr>
             <td><strong>Mistral</strong></td>
             <td><code>mistral</code></td>
-            <td>mistral-large-latest</td>
+            <td>mistral-small-latest</td>
             <td>EU data residency</td>
           </tr>
           <tr>
             <td><strong>Ollama</strong></td>
             <td><code>ollama</code></td>
-            <td>any local model</td>
+            <td>llama3 <em>(configurable)</em></td>
             <td>Complete privacy, no API key</td>
           </tr>
           <tr>
@@ -555,15 +555,16 @@ dclaw forensic blame src/legacy.rs:204</pre>
             <td>Unified access to any model</td>
           </tr>
           <tr>
-            <td><strong>Custom endpoint</strong></td>
-            <td><code>openai-compat</code></td>
-            <td>OpenAI-compatible</td>
-            <td>Self-hosted LLMs, vLLM, LM Studio</td>
+            <td><strong>Sarvam</strong></td>
+            <td><code>sarvam</code></td>
+            <td>sarvam-m</td>
+            <td>Indian language models</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="table-note">Keys are encrypted with AES-256-GCM + Argon2id and stored locally in <code>~/.dclaw/credentials.enc</code> — never sent to any server other than your chosen provider.</p>
+    <p class="table-note">Keys are encrypted with AES-256-GCM + Argon2id and stored locally in <code>~/.dclaw/creds/</code> — never sent to any server other than your chosen provider.</p>
+    <p class="table-note">Ollama runs locally with no API key. Override the model or host with <code>OLLAMA_MODEL=llama3.2</code> and <code>OLLAMA_BASE_URL=http://localhost:11434/v1</code>.</p>
   </div>
 </section>
 
@@ -761,7 +762,7 @@ dclaw git "rebase last 5 commits to clean up the history"</code></pre>
         <div class="code-block">
           <pre><code>curl -fsSL https://akkeshavan.github.io/dev-claw/install.sh | sh</code></pre>
         </div>
-        <p>To pin a version: <code>VERSION=v0.1.1 curl -fsSL ... | sh</code></p>
+        <p>To pin a version: <code>VERSION=v0.1.3 curl -fsSL ... | sh</code></p>
       </div>
 
       <div class="install-method">
