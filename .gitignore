@@ -2,3 +2,4 @@
 /dist-macos-*/
 /.claude
 /.dev-claw
+.env
