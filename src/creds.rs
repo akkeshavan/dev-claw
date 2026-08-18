@@ -103,6 +103,8 @@ fn env_key_for(provider: &str) -> Option<String> {
         "openrouter" => "OPENROUTER_API_KEY",
         "sarvam" => "SARVAM_API_KEY",
         "ollama" => "OLLAMA_API_KEY",
+        "do-token" => "DIGITALOCEAN_TOKEN",
+        "hetzner-token" => "HETZNER_API_TOKEN",
         _ => return None,
     };
     std::env::var(var).ok()

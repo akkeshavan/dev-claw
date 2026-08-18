@@ -231,7 +231,11 @@ async fn call_planner(tools: &str, context: &str, query: &str) -> Result<Vec<Ste
         .ok()
         .or_else(creds::auto_detect_provider)
         .ok_or_else(|| {
-            anyhow::anyhow!("No API key configured.\nRun: dclaw config set-key --provider deepseek")
+            anyhow::anyhow!(
+                "No API key configured.\n\
+                 Run:  dclaw config set-key --provider deepseek\n\
+                 Or:   DEV_CLAW_PROVIDER=ollama dclaw <query>"
+            )
         })?;
     let api_key = creds::load(&provider)?;
 
