@@ -28,11 +28,13 @@ pub fn client_for(provider: &str, api_key: &str) -> Box<dyn LlmClient> {
             api_key,
             "llama-3.3-70b-versatile",
         )),
-        "ollama" => Box::new(openai_compat::Client::new(
-            "http://localhost:11434/v1",
-            "ollama",
-            "llama3",
-        )),
+        "ollama" => {
+            let base = std::env::var("OLLAMA_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
+            let model = std::env::var("OLLAMA_MODEL")
+                .unwrap_or_else(|_| "llama3".to_string());
+            Box::new(openai_compat::Client::new(&base, api_key, &model))
+        }
         "openrouter" => Box::new(openai_compat::Client::new(
             "https://openrouter.ai/api/v1",
             api_key,
