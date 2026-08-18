@@ -6,6 +6,16 @@ use crate::creds;
 
 pub async fn set_key(provider: &str) -> Result<()> {
     validate_provider(provider)?;
+    if provider == "ollama" {
+        println!("Ollama runs locally — no API key required.");
+        println!();
+        println!("To select Ollama as your provider:");
+        println!("  export DEV_CLAW_PROVIDER=ollama");
+        println!();
+        println!("If your Ollama instance requires authentication, set:");
+        println!("  export OLLAMA_API_KEY=<your-token>");
+        return Ok(());
+    }
     let prompt = format!("{provider} API key: ");
     let api_key = rpassword::prompt_password(&prompt)?;
     let api_key = api_key.trim();
@@ -63,6 +73,11 @@ mod tests {
         for p in creds::LLM_PROVIDERS {
             assert!(validate_provider(p).is_ok(), "should accept '{p}'");
         }
+    }
+
+    #[test]
+    fn accepts_ollama() {
+        assert!(validate_provider("ollama").is_ok());
     }
 
     #[test]

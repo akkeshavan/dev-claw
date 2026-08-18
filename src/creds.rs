@@ -21,6 +21,7 @@ pub const LLM_PROVIDERS: &[&str] = &[
     "mistral",
     "openrouter",
     "sarvam",
+    "ollama",
 ];
 
 /// All valid key names (LLM + cloud tokens).
@@ -33,6 +34,7 @@ pub const ALL_PROVIDERS: &[&str] = &[
     "mistral",
     "openrouter",
     "sarvam",
+    "ollama",
     "do-token",
     "hetzner-token",
 ];
@@ -75,6 +77,8 @@ fn restrict_file_permissions(_path: &std::path::Path) -> Result<()> {
 ///   1. Standard provider env var (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY)
 ///   2. Generic DEV_CLAW_API_KEY env var
 ///   3. Encrypted credential store (~/.dclaw/creds/{provider}.enc)
+///   4. For Ollama only: fall back to the "ollama" no-auth placeholder,
+///      since Ollama is a local server that requires no API key by default.
 pub fn load(provider: &str) -> Result<String> {
     if let Some(key) = env_key_for(provider) {
         return Ok(key);
@@ -82,7 +86,11 @@ pub fn load(provider: &str) -> Result<String> {
     if let Ok(key) = std::env::var("DEV_CLAW_API_KEY") {
         return Ok(key);
     }
-    load_from_store(provider)
+    match load_from_store(provider) {
+        Ok(key) => Ok(key),
+        Err(_) if provider == "ollama" => Ok("ollama".to_string()),
+        Err(e) => Err(e),
+    }
 }
 
 fn env_key_for(provider: &str) -> Option<String> {
@@ -94,6 +102,7 @@ fn env_key_for(provider: &str) -> Option<String> {
         "mistral" => "MISTRAL_API_KEY",
         "openrouter" => "OPENROUTER_API_KEY",
         "sarvam" => "SARVAM_API_KEY",
+        "ollama" => "OLLAMA_API_KEY",
         _ => return None,
     };
     std::env::var(var).ok()
@@ -477,6 +486,28 @@ mod tests {
         assert!(LLM_PROVIDERS.contains(&"mistral"));
         assert!(LLM_PROVIDERS.contains(&"openrouter"));
         assert!(LLM_PROVIDERS.contains(&"sarvam"));
+        assert!(LLM_PROVIDERS.contains(&"ollama"));
+    }
+
+    #[test]
+    fn ollama_load_returns_placeholder_without_key() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::env::set_var("DEV_CLAW_CREDS_DIR", d.path());
+        // no OLLAMA_API_KEY, no stored cred — should not error
+        let result = load("ollama").unwrap();
+        std::env::remove_var("DEV_CLAW_CREDS_DIR");
+        assert_eq!(result, "ollama");
+    }
+
+    #[test]
+    fn ollama_load_prefers_env_var_when_set() {
+        let d = tempfile::TempDir::new().unwrap();
+        std::env::set_var("DEV_CLAW_CREDS_DIR", d.path());
+        std::env::set_var("OLLAMA_API_KEY", "sk-ollama-auth-token");
+        let result = load("ollama").unwrap();
+        std::env::remove_var("OLLAMA_API_KEY");
+        std::env::remove_var("DEV_CLAW_CREDS_DIR");
+        assert_eq!(result, "sk-ollama-auth-token");
     }
 
     #[test]
